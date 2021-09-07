@@ -1,0 +1,8 @@
+*/earrape* _\[valore \(opzionale\)\]_
+
+Restituisce l'audio da un file audio o video, aumentato di volume del valore specificato
+
+*NOTE:*
+‣ il valore *può* essere negativo, in quel caso il volume diminuirà
+‣ il massimo valore è *10*, il minimo *\-10*
+‣ se scritto senza nient'altro dopo viene preso in automatico *4* come valore

@@ -1,0 +1,6 @@
+*/reverse*
+
+Restituisce l'audio o il video dato in input, al contrario
+
+*NOTA:*
+‣ per indicare l'audio o il video di input bisogna rispondere a quel messaggio con il comando, senza scrivere nient'altro

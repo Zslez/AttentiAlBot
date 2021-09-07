@@ -1,0 +1,6 @@
+*/sacrifica* _\[numero \(opzionale\)\]_
+
+Genera casualmente il numero specificato di cognomi della classe 👀
+
+*NOTA:*
+‣ se scritto senza nient'altro dopo viene preso in automatico *2*

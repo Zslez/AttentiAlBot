@@ -1,0 +1,6 @@
+*/video* _\[link \(opzionale\)\]_
+
+Restituisce il video da un link YouTube
+
+*NOTE:*
+‣ se manca il link questo verrà cercato nel messaggio a cui si risponde

@@ -1,0 +1,7 @@
+*/audio* _\[link \(opzionale\)\]_
+
+Restituisce l'audio di un *video* o *link YouTube*
+
+*NOTE:*
+‣ se manca il link questo verrà cercato *nel messaggio a cui si risponde*
+‣ se si vuole l'audio estratto da un file video bisogna *rispondere a quel video* con il comando, *senza* scrivere nient'altro

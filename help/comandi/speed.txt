@@ -1,0 +1,6 @@
+*/speed* _\[valore\]_
+
+Restituisce l'audio o il video dato in input, alla velocità specificata
+
+*NOTA:*
+‣ il valore minimo è *0\.5*, il massimo è *100*

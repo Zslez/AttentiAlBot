@@ -1,0 +1,13 @@
+*/compiti* _\[data \(opzionale\)\]_
+
+Restituisce i compiti assegnati per il *giorno specificato*
+
+*NOTE:*
+‣ se scritto senza nient'altro dopo viene presa in automatico *la data del giorno successivo*
+‣ se *non* vengono specificati mese e anno, vengono presi quelli *correnti*
+
+*ESEMPI:*
+/compiti 5 2
+\=\> compiti per il 5 Feb 2021
+
+_*/help \-\> formati data*_ per vedere i formati data accettati

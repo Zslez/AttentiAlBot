@@ -1,0 +1,6 @@
+*/speedpitch* _\[valore\]_
+
+Restituisce l'audio o il video dato in input, alla velocità specificata con anche il pitch modificato
+
+*NOTA:*
+‣ il valore minimo è *0\.5*, il massimo è *100*

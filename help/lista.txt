@@ -1,0 +1,19 @@
+*Lista dei comandi:*
+
+*PER SCUOLA*
+‣ /compiti \(alias /c\)
+‣ /promemoria \(alias /p\)
+‣ /sacrifica
+
+*PER DIVERTIMENTO*
+‣ /audio \(alias /a\)
+‣ /cut
+‣ /earrape \(alias /e\)
+‣ /image \(alias /i\)
+‣ /reverse \(alias /r\)
+‣ /speed \(alias /s\)
+‣ /speedpitch \(alias /sp\)
+‣ /video \(alias /v\)
+
+*ALTRO*
+‣ /help \(alias /h\)
