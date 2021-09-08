@@ -52,6 +52,7 @@ with open('json/bad_words_list.json', encoding = 'utf-8') as f:
 # lista dei comandi del Bot
 
 comandi = [
+    'class',
     'compiti',
     'sacrifica',
     'promemoria',
@@ -125,12 +126,12 @@ def help(update, ctx):
 
 def help_keyboard():
     return [
-        [InlineKeyboardButton('INFO', callback_data = 'help_null')],
+        [InlineKeyboardButton('INFO', callback_data = 'null')],
         [
             InlineKeyboardButton('lista comandi', callback_data = 'help_lista'),
             InlineKeyboardButton('formati data', callback_data = 'help_data')
         ],
-        [InlineKeyboardButton('COMANDI', callback_data = 'help_null')]
+        [InlineKeyboardButton('COMANDI', callback_data = 'null')]
     ] + [
         [InlineKeyboardButton(i, callback_data = f'help_{i}') for i in j] for j in chunks(comandi, 3)
     ] + [
@@ -311,6 +312,7 @@ def main():
     dp.add_handler(CommandHandler("sp",         deco(speed_pitch_audio_video)))
     dp.add_handler(CommandHandler("v",          deco(to_video)))
 
+    dp.add_handler(CommandHandler("cl",         deco(get_courses)))
     dp.add_handler(CommandHandler("c",          deco(compiti)))
     dp.add_handler(CommandHandler("p",          deco(promemoria)))
 
@@ -324,6 +326,7 @@ def main():
     dp.add_handler(CallbackQueryHandler(courses_callback_ann, pattern = '^classann_'))
     dp.add_handler(CallbackQueryHandler(courses_callback_work, pattern = '^classwork_'))
     dp.add_handler(CallbackQueryHandler(callback_delete, pattern = '^delete'))
+    dp.add_handler(CallbackQueryHandler(callback_null, pattern = '^null'))
 
     dp.add_error_handler(error)
 
@@ -357,7 +360,7 @@ def main():
 
     # PRENDE LE NEWS DALLA BACHECA
 
-    up.job_queue.run_repeating(callback = get_news, interval = timedelta(minutes = 150), first = 10)
+    up.job_queue.run_repeating(callback = get_news, interval = timedelta(minutes = 150), first = 1000)
 
     up.start_polling()
 

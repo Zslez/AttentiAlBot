@@ -3,4 +3,4 @@
 Restituisce l'audio o il video dato in input, alla velocità specificata con anche il pitch modificato
 
 *NOTA:*
-‣ il valore minimo è *0\.5*, il massimo è *100*
+‣ il valore minimo è *0\.2*, il massimo è *10*

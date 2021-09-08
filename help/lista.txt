@@ -1,6 +1,7 @@
 *Lista dei comandi:*
 
 *PER SCUOLA*
+‣ /class \(alias /cl\)
 ‣ /compiti \(alias /c\)
 ‣ /promemoria \(alias /p\)
 ‣ /sacrifica

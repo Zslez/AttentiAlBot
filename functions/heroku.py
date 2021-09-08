@@ -31,14 +31,16 @@ hemail = None if globals.name else os.environ['HEMAIL']
 def change_heroku(ctx):
     res = get_remaining_time(hemail, hpass)
 
+    string = bool(hname.replace('attenti-al-bot', ''))
+
     send(
         -1001533648966,
-        f'rimangono `{res}`` ore su `' +  ['attenti-al-bot', 'attenti-al-bot-2'][hname.replace('attenti-al-bot', '')] + '`.'
+        f'rimangono `{res}`` ore su `' +  ['attenti-al-bot', 'attenti-al-bot-2'][string] + '`.'
     )
 
     if res < 100:
         api = heroku3.from_key(hkey2)
-        app = api.app(['attenti-al-bot-2', 'attenti-al-bot'][hname.replace('attenti-al-bot', '')])
+        app = api.app(['attenti-al-bot-2', 'attenti-al-bot'][string])
         app.process_formation()['worker'].scale(1)
 
         api = heroku3.from_key(hkey)

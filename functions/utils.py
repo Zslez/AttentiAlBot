@@ -86,7 +86,12 @@ def pin(chat_id, msg_id):
 
 
 def download_file(file_id):
-    req = get(url + f'getFile?file_id={file_id}').json()['result']['file_path']
+    req = get(url + f'getFile?file_id={file_id}').json()['result']
+
+    if req['file_size'] > 52428800:
+        return None
+
+    req = req['file_path']
 
     with open(req.split('/')[-1], 'wb') as f:
         f.write(get(f'https://api.telegram.org/file/bot{token}/{req}', allow_redirects = True).content)

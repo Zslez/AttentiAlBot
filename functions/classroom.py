@@ -1,7 +1,13 @@
 from telegram   import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.update import Update
 from globals    import service, courses
 
 from .utils     import escape_md
+
+import calendar
+import locale
+
+locale.setlocale(locale.LC_ALL, 'it_IT')
 
 
 
@@ -10,7 +16,8 @@ __all__ = [
     'courses_callback_choice',
     'courses_callback_ann',
     'courses_callback_work',
-    'callback_delete'
+    'callback_delete',
+    'callback_null'
 ]
 
 
@@ -73,6 +80,7 @@ def courses_callback_choice(update, ctx):
 def courses_callback_ann(update, ctx):
     msg = update.callback_query.message
     data = update.callback_query['data'].split('_')[1:]
+    page = 1
 
     id, *name = data
     name1 = ' '.join(name)
@@ -95,15 +103,54 @@ def courses_callback_ann(update, ctx):
         )
 
         return ctx.bot.answer_callback_query(update.callback_query['id'])
+    elif id == 'page':
+        id, *name1, page = name
+        name1 = ' '.join(name[1:-1])
+        name2 = '_'.join(name[1:-1])
+        page = int(page)
 
-    post = service.announcements().list(courseId = id, pageSize = 1).execute().get('announcements', [])[-1]
+    text, end = get_ann(id, name1, page)
+
+    arrows = []
+
+    if page > 1:
+        arrows.append(InlineKeyboardButton('⬅️', callback_data = 'classann_page_' + id + '_' + name2 + '_' + str(page - 1)))
+
+    if not end:
+        arrows.append(InlineKeyboardButton('➡️', callback_data = 'classann_page_' + id + '_' + name2 + '_' + str(page + 1)))
+
+    keyboard = [
+        arrows,
+        [InlineKeyboardButton('indietro', callback_data = 'classann_back_' + id + '_' + name2)],
+        [InlineKeyboardButton('🗑️', callback_data = 'delete')]
+    ]
+
+    msg.edit_text(
+        text,
+        reply_markup = InlineKeyboardMarkup(keyboard),
+        parse_mode = 'markdownv2'
+    )
+
+    return ctx.bot.answer_callback_query(update.callback_query['id'])
+
+
+
+def get_ann(id, name, num):
+    post = service.announcements().list(courseId = id, pageSize = num + 1).execute().get('announcements', [[], []])
+
+    end = num == len(post)
+
+    if end:
+        post = post[-1]
+    else:
+        post = post[-2]
 
     materials = ''
 
     if not post:
-        text = 'Questo corso non ha ancora nessun annuncio.'
+        text = '_Questo corso non ha ancora nessun annuncio\._'
     else:
-        text = f'[*ULTIMO ANNUNCIO IN "{name1.upper()}"*](' + post['alternateLink'] + ')\n\n' + escape_md(post['text'])
+        text = f'[*ULTIMO ANNUNCIO IN "{name.upper()}"*](' + post['alternateLink'] + ')\n\n' + escape_md(post['text'])
 
     if 'materials' in post:
         materials = '\n\n*ALLEGATI:*\n'
@@ -126,24 +173,91 @@ def courses_callback_ann(update, ctx):
 
                     materials += ')\n'
 
-    keyboard = [
-        [InlineKeyboardButton('indietro', callback_data = 'classann_back_' + id + '_' + name2)],
-        [InlineKeyboardButton('🗑️', callback_data = 'delete')]
-    ]
+    return text + materials, end
 
-    msg.edit_text(
-        text + materials,
-        reply_markup = InlineKeyboardMarkup(keyboard),
-        parse_mode = 'markdownv2'
-    )
 
-    return ctx.bot.answer_callback_query(update.callback_query['id'])
+
+def get_work(id, num):
+    post = service.courseWork().list(courseId = id, pageSize = num + 1).execute().get('courseWork', [[], []])
+
+    end = num == len(post)
+
+    if end:
+        post = post[-1]
+    else:
+        post = post[-2]
+
+    materials = ''
+    date = ''
+
+    if not post:
+        text = '_Questo corso non ha ancora nessun compito\._'
+    else:
+        text = f'[*' + escape_md(post['title']).upper() + '*](' + post['alternateLink'] + ')\n'
+
+        if 'description' in post:
+            text += '\n' + escape_md(post['description']) + '\n'
+
+    if 'materials' in post:
+        materials = '\n*ALLEGATI:*\n'
+        mat = post['materials']
+
+        for i in mat:
+            for j in ['driveFile', 'youtubeVideo', 'link', 'form']:
+                if j in i:
+                    obj = i[j]
+
+                    if j == 'driveFile':
+                        obj = obj[j]
+                        materials += ' ‣ [' + escape_md(obj['title']) + '](' + obj['alternateLink']
+                    elif j == 'youtubeVideo':
+                        materials += ' ‣ [' + escape_md(obj['title']) + '](' + obj['alternateLink']
+                    elif j == 'link':
+                        materials += ' ‣ [' + escape_md(obj['title']) + '](' + obj['url']
+                    elif j == 'form':
+                        materials += ' ‣ [' + escape_md(obj['title']) + '](' + obj['formUrl']
+
+                    materials += ')\n'
+
+    if 'dueDate' in post:
+        date = '\n*DA CONSEGNARE ENTRO:*\n'
+        duedate = post['dueDate']
+
+        if 'year' in duedate:
+            year = str(duedate['year'])
+
+        if 'month' in duedate:
+            month = duedate['month']
+
+        if 'day' in duedate:
+            day = str(duedate['day'])
+
+        month = calendar.month_name[month].capitalize()
+
+        time = post['dueTime']
+
+        hours = str(time['hours'])
+
+        if 'mins' in time:
+            mins = ':' + str(time['mins']).rjust(2, '0')
+        else:
+            mins = ':00'
+
+        if 'secs' in time:
+            secs = ':' + str(time['secs']).rjust(2, '0')
+        else:
+            secs = ':00'
+
+        date += f'{day} {month} {year} alle {hours}{mins}{secs}'
+
+    return text + materials + date, end
 
 
 
 def courses_callback_work(update, ctx):
     msg = update.callback_query.message
     data = update.callback_query['data'].split('_')[1:]
+    page = 1
 
     id, *name = data
     name1 = ' '.join(name)
@@ -166,47 +280,30 @@ def courses_callback_work(update, ctx):
         )
 
         return ctx.bot.answer_callback_query(update.callback_query['id'])
+    elif id == 'page':
+        id, *name1, page = name
+        name1 = ' '.join(name[1:-1])
+        name2 = '_'.join(name[1:-1])
+        page = int(page)
 
-    post = service.courseWork().list(courseId = id, pageSize = 1).execute().get('courseWork', [])[-1]
+    text, end = get_work(id, page)
 
-    materials = ''
+    arrows = []
 
-    if not post:
-        text = 'Questo corso non ha ancora nessun compito.'
-    else:
-        text = f'[*' + escape_md(post['title']).upper() + '*](' + post['alternateLink'] + ')\n\n'
+    if page > 1:
+        arrows.append(InlineKeyboardButton('⬅️', callback_data = 'classwork_page_' + id + '_' + name2 + '_' + str(page - 1)))
 
-        if 'description' in post:
-            text += escape_md(post['description']) + '\n\n'
-
-    if 'materials' in post:
-        materials = '*ALLEGATI:*\n'
-        mat = post['materials']
-
-        for i in mat:
-            for j in ['driveFile', 'youtubeVideo', 'link', 'form']:
-                if j in i:
-                    obj = i[j]
-
-                    if j == 'driveFile':
-                        obj = obj[j]
-                        materials += ' ‣ [' + escape_md(obj['title']) + '](' + obj['alternateLink']
-                    elif j == 'youtubeVideo':
-                        materials += ' ‣ [' + escape_md(obj['title']) + '](' + obj['alternateLink']
-                    elif j == 'link':
-                        materials += ' ‣ [' + escape_md(obj['title']) + '](' + obj['url']
-                    elif j == 'form':
-                        materials += ' ‣ [' + escape_md(obj['title']) + '](' + obj['formUrl']
-
-                    materials += ')\n'
+    if not end:
+        arrows.append(InlineKeyboardButton('➡️', callback_data = 'classwork_page_' + id + '_' + name2 + '_' + str(page + 1)))
 
     keyboard = [
+        arrows,
         [InlineKeyboardButton('indietro', callback_data = 'classwork_back_' + id + '_' + name2)],
         [InlineKeyboardButton('🗑️', callback_data = 'delete')]
     ]
 
     msg.edit_text(
-        text + materials,
+        text,
         reply_markup = InlineKeyboardMarkup(keyboard),
         parse_mode = 'markdownv2'
     )
@@ -221,14 +318,19 @@ def callback_delete(update, ctx):
 
 
 
+def callback_null(update, ctx):
+    return ctx.bot.answer_callback_query(update.callback_query['id'])
+
+
+
 def f(service, courseslist, num):
     courses = service
 
     courseWorks = courses.courseWork()
-    courseWorks = [courseWorks.list(courseId = i['id'], pageSize = num).execute().get('courseWork', [])[-1] for i in courseslist]
+    courseWorks = [courseWorks.list(courseId = i['id'], pageSize = num).execute().get('courseWork', [[]])[-1] for i in courseslist]
 
     announcements = courses.announcements()
-    announcements = [announcements.list(courseId = i['id'], pageSize = num).execute().get('announcements', [])[-1] for i in courseslist]
+    announcements = [announcements.list(courseId = i['id'], pageSize = num).execute().get('announcements', [[]])[-1] for i in courseslist]
 
     print(announcements)
     input()

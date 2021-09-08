@@ -31,7 +31,7 @@ passw = None if globals.name else os.environ['PASSWORD']
 
 # per accorciare gli URL con Bitly
 
-bittoken = os.environ['BITTOKEN']
+bittoken = '' if globals.name else os.environ['BITTOKEN']
 
 header = {'Authorization': 'Bearer ' + bittoken, 'Content-Type': 'application/json'}
 
