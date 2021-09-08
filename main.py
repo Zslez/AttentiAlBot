@@ -1,22 +1,25 @@
-from telegram.ext       import Updater, CommandHandler, MessageHandler, Filters, JobQueue, CallbackQueryHandler
-from telegram           import InlineKeyboardButton, InlineKeyboardMarkup
-from logging            import basicConfig, DEBUG, getLogger
-from datetime           import time, timedelta
-from random             import choice
+from telegram.ext                   import Updater, CommandHandler, MessageHandler, Filters, JobQueue, CallbackQueryHandler
+from telegram                       import InlineKeyboardButton, InlineKeyboardMarkup
+from google.oauth2.credentials      import Credentials
+from logging                        import basicConfig, DEBUG, getLogger
+from datetime                       import time, timedelta
+from random                         import choice
+from telegram.ext.callbackcontext import CallbackContext
 
-from telegram.update    import Update
+from telegram.update                import Update
 
 import globals
 
 globals.name = __name__ == '__main__'
 
-from functions.classroom    import *
-from functions.heroku       import *
-from functions.scuola       import *
-from functions.utils        import *
-from functions.file         import *
-from functions.news         import *
+from functions.classroom            import *
+from functions.heroku               import *
+from functions.scuola               import *
+from functions.utils                import *
+from functions.file                 import *
+from functions.news                 import *
 
+import requests
 import heroku3
 import json
 import os
@@ -33,6 +36,9 @@ logger = getLogger(__name__)
 # VARIABLES
 
 token = os.environ['TOKEN']
+
+with open('token.json') as f:
+    gtoken = json.load(f)
 
 privata = 781455352                 # il mio ID Telegram
 gruppo = -1001261320605             # l'ID del gruppo
@@ -80,14 +86,14 @@ def start(update, ctx):
     reply(update, choice(['Weilà', 'Hey', 'Привет', 'ちわっす', '嘿']) + '\n' + '''
 *Info sul Bot*
 
-Con questo Bot è possibile \
-ottenere *compiti*, *promemoria* e *notizie* direttamente su Telegram senza bisogno di credenziali, sia in chat privata che sui gruppi\.
+Con questo Bot è possibile ottenere *compiti*, *promemoria* e *notizie* \
+direttamente su Telegram senza bisogno di credenziali, sia in chat privata che sui gruppi\.
 
 Il Bot invierà anche alcuni messaggi in automatico sul gruppo ogni giorno ad un certo orario, \
 come gli argomenti della giornata appena finita, i promemoria e i compiti per il giorno successivo\.
 
-Inoltre ci sono tante altre funzioni per puro divertimento, che servono a modificare in vari modi audio e video \
-\(funziona anche con i *messaggi vocali*\)\.
+Inoltre ci sono tante altre funzioni per puro divertimento, che servono a modificare \
+in vari modi audio e video \(funziona anche con i *messaggi vocali*\)\.
 
 
 *Come usare i comandi*
@@ -103,9 +109,14 @@ sono piuttosto sicuro non gli dispiaccia\)\.
 
 *Non ti fidi di [Cristiano](https://t.me/cristiano_san)?*
 
-Understandable, tuttavia ti invito a dare un'occhiata al codice del Bot [qui](https://github.com/Zslez/AttentiAlBot) su GitHub, \
-completo e commentato\.
-Se ne capisci un minimo vedrai che non c'è nulla di losco, anche perché vengono usate le mie credenziali per accedere ad ARGO\.
+Understandable, tuttavia ti invito a dare un'occhiata al codice del Bot \
+[qui](https://github.com/Zslez/AttentiAlBot) su GitHub, completo e commentato\.
+Non c'è nulla di losco, anche perché vengono usate le mie credenziali per accedere ad ARGO\.
+
+*NOTA*, però, che per sapere se ci sono errori e per capire come correggerli, \
+[inoltro in un canale privato il testo di tutti i comandi usati](https://github.com/Zslez/AttentiAlBot/blob/master/main.py#L195), \
+quindi, *NON* inviare mai dati sensibili al Bot quando usi un comando, anche perché non è mai necessario farlo\.
+Di conseguenza, non mi prendo alcuna responsabilità per questo tipo di _incidenti_\.
 ''', markdown = 2)
 
 
@@ -189,14 +200,14 @@ def deco(func):
         if uid != privata:
             send(
                 attentiallog,
-                'USER ID: ' + uid + \
-                f'REGISTRATO: {uid in intusers}' + \
+                'USER ID: ' + str(uid) + \
+                f'\nREGISTRATO: {uid in intusers}' + \
                 '\nUSER NAME: ' + uname + \
                 '\n\nCOMANDO:\n' + \
                 update.message.text
             )
 
-        if uid not in intusers:
+        if uid not in intusers and update.message.chat_id != gruppo:
             send(uid, 'Invia prima un messaggio nel gruppo, così so che fai parte della classe.')
             return
 
@@ -204,6 +215,20 @@ def deco(func):
 
     return new_func
 
+
+
+def get_users(update, ctx):
+    if update.message.from_user.id == privata:
+        users_lst = [ctx.bot.get_chat_member(chat_id = gruppo, user_id = i) for i in intusers]
+        send(privata, '\n'.join([str(i.user.id) + ' ' + i.user.first_name for i in users_lst]))
+
+
+
+def update_users(ctx):
+    config = heroku3.from_key(hkey).app(hname).config()
+
+    if ','.join(users) != config['USERS']:
+        config['USERS'] = ','.join(users)
 
 
 
@@ -215,14 +240,14 @@ def bad_word_check(update: Update, ctx):
     else:
         message = update.channel_post
 
-    uid = message.from_user.id
+    try:
+        uid = message.from_user.id
+    except:
+        return
 
-    if uid not in users and message.chat_id == gruppo:
+    if uid not in intusers and message.chat_id == gruppo:
         users.append(str(uid))
         intusers.append(uid)
-        app = heroku3.from_key(hkey).app(hname)
-        config = app.config()
-        config['USERS'] = ','.join(users)
 
     try:
         msg = message.text
@@ -236,7 +261,7 @@ def bad_word_check(update: Update, ctx):
             update.message.reply_video(f, 'quando_sborri.mp4',
                 caption = '🎵turuturù turuturù turuturù🎵\n🎵turutututurutu turutu tù!🎵')
             return
-    elif ('interroga ' in msg or 'interroga?' in msg) and 'non' not in msg.split():
+    elif ('interroga' in msg.split() or 'interroga?' in msg) and 'non' not in msg.split():
         with open('video/Directed_by_Robert_Weide.mp4', 'rb') as f:
             update.message.reply_video(f, 'Directed_by_Robert_Weide.mp4',
                 caption = '🎵pom pom pom, turuturutturù, turù turù🎵\n🎵turù tuturuturutturù, turù IIIH🎵')
@@ -254,21 +279,40 @@ def bad_word_check(update: Update, ctx):
 def error(update, ctx):
     try:
         send(
-            privata,
+            attentiallog,
             f'An error occurred!\n\n\nUpdate:\n```\n{json.dumps(update.to_dict(), indent = 4)}```' \
                 f'\n\nError: {str(ctx.error)}',
             1
         )
     except:
-        send(privata, f'An error occurred!\n\nError: {str(ctx.error)}', 0)
+        send(attentiallog, f'An error occurred!\n\nError: {str(ctx.error)}', 0)
 
     logger.warning('Update "%s" caused error "%s"', update, ctx.error)
 
 
 
-def restart(update, ctx):
-    if update.message.from_user.id == privata:
-        heroku3.from_key(hkey).app(hname).restart()
+def update_token(ctx):
+    params = {
+        "grant_type": "refresh_token",
+        "client_id": gtoken['client_id'],
+        "client_secret": gtoken['client_secret'],
+        "refresh_token": gtoken['refresh_token']
+    }
+
+    authorization_url = "https://www.googleapis.com/oauth2/v4/token"
+    access_token = requests.post(authorization_url, data = params).json()['access_token']
+    gtoken['token'] = access_token
+
+    with open('token.json', 'w') as f:
+        json.dump(gtoken, f)
+
+    globals.service = globals.build(
+        'classroom',
+        'v1',
+        credentials = Credentials.from_authorized_user_file('token.json', globals.SCOPES)
+    ).courses()
+
+    globals.courses = globals.service.list(pageSize = 15, courseStates = ['ACTIVE']).execute()['courses']
 
 
 
@@ -317,6 +361,11 @@ def main():
     dp.add_handler(CommandHandler("p",          deco(promemoria)))
 
 
+    # PER ME
+
+    dp.add_handler(CommandHandler("users",      deco(get_users)))
+
+
     # ALTRI HANDLER
 
     dp.add_handler(MessageHandler(Filters.text, bad_word_check))
@@ -338,29 +387,38 @@ def main():
     job_queue3 = JobQueue()
     job_queue4 = JobQueue()
     job_queue5 = JobQueue()
+    job_queue6 = JobQueue()
+    job_queue7 = JobQueue()
 
     job_queue1.set_dispatcher(dp)
     job_queue2.set_dispatcher(dp)
     job_queue3.set_dispatcher(dp)
     job_queue4.set_dispatcher(dp)
     job_queue5.set_dispatcher(dp)
+    job_queue6.set_dispatcher(dp)
+    job_queue7.set_dispatcher(dp)
 
-    job_queue1.run_daily(callback = change_heroku,            days = (0, 1, 2, 3, 4, 5, 6),   time = time(hour =  2, minute =  0))
-    job_queue2.run_daily(callback = verifica,                 days = (0, 1, 2, 3, 4      ),   time = time(hour = 12, minute =  0))
-    job_queue3.run_daily(callback = get_today,                days = (0, 1, 2, 3, 4      ),   time = time(hour = 12, minute = 30))
-    job_queue4.run_daily(callback = promemoria_giornaliero,   days = (0, 1, 2, 3,       6),   time = time(hour = 13, minute =  0))
-    job_queue5.run_daily(callback = promemoria_giornaliero,   days = (0, 1, 2, 3,       6),   time = time(hour = 19, minute =  0))
+    job_queue1.run_daily(callback = change_heroku,              days = (0, 1, 2, 3, 4, 5, 6),   time = time(hour =  2, minute =  0))
+    job_queue2.run_daily(callback = verifica,                   days = (0, 1, 2, 3, 4      ),   time = time(hour = 12, minute =  0))
+    job_queue3.run_daily(callback = get_today,                  days = (0, 1, 2, 3, 4      ),   time = time(hour = 12, minute = 30))
+    job_queue4.run_daily(callback = promemoria_giornaliero,     days = (0, 1, 2, 3,       6),   time = time(hour = 13, minute =  0))
+    job_queue5.run_daily(callback = promemoria_giornaliero,     days = (0, 1, 2, 3,       6),   time = time(hour = 19, minute =  0))
+    job_queue6.run_daily(callback = update_users,               days = (0, 1, 2, 3, 4, 5, 6),   time = time(hour =  1, minute =  0))
+
+    job_queue7.run_repeating(callback = update_token, interval = timedelta(hours = 1), first = 10)
 
     job_queue1.start()
     job_queue2.start()
     job_queue3.start()
     job_queue4.start()
     job_queue5.start()
+    job_queue6.start()
+    job_queue7.start()
 
 
     # PRENDE LE NEWS DALLA BACHECA
 
-    up.job_queue.run_repeating(callback = get_news, interval = timedelta(minutes = 150), first = 1000)
+    up.job_queue.run_repeating(callback = get_news, interval = timedelta(minutes = 150), first = 100)
 
     up.start_polling()
 

@@ -1,13 +1,7 @@
 from telegram   import InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.update import Update
 from globals    import service, courses
 
 from .utils     import escape_md
-
-import calendar
-import locale
-
-locale.setlocale(locale.LC_ALL, 'it_IT')
 
 
 
@@ -18,6 +12,23 @@ __all__ = [
     'courses_callback_work',
     'callback_delete',
     'callback_null'
+]
+
+
+
+months = [
+    'Gennaio',
+    'Febbraio',
+    'Marzo',
+    'Aprile',
+    'Maggio',
+    'Giugno',
+    'Luglio',
+    'Agosto',
+    'Settembre',
+    'Ottobre',
+    'Novembre',
+    'Dicembre'
 ]
 
 
@@ -150,7 +161,12 @@ def get_ann(id, name, num):
     if not post:
         text = '_Questo corso non ha ancora nessun annuncio\._'
     else:
-        text = f'[*ULTIMO ANNUNCIO IN "{name.upper()}"*](' + post['alternateLink'] + ')\n\n' + escape_md(post['text'])
+        if num == 1:
+            text = f'[*ULTIMO ANNUNCIO IN "{name.upper()}"*](' + post['alternateLink'] + ')\n\n' + escape_md(post['text'])
+        elif end:
+            text = f'[*PRIMO ANNUNCIO IN "{name.upper()}"*](' + post['alternateLink'] + ')\n\n' + escape_md(post['text'])
+        else:
+            text = f'[*ANNUNCIO IN "{name.upper()}"*](' + post['alternateLink'] + ')\n\n' + escape_md(post['text'])
 
     if 'materials' in post:
         materials = '\n\n*ALLEGATI:*\n'
@@ -232,7 +248,7 @@ def get_work(id, num):
         if 'day' in duedate:
             day = str(duedate['day'])
 
-        month = calendar.month_name[month].capitalize()
+        month = months[month - 1]
 
         time = post['dueTime']
 
