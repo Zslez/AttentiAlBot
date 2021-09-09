@@ -2,7 +2,6 @@ from urllib.parse       import quote_plus
 from telegram.update    import Update
 from requests           import get
 
-import globals
 import os
 
 
@@ -21,6 +20,7 @@ __all__ = [
     'reply',
     'reply_callback',
     'send',
+    'send_photo',
     'url',
 ]
 
@@ -37,9 +37,7 @@ def send(chat, msg, markdown = 2, preview = False):
         if not preview:
             u += '&disable_web_page_preview=True'
 
-        msg = get(u).json()
-
-        if not msg['ok']:
+        if not get(u).json()['ok']:
             raise ZeroDivisionError
 
         return msg
@@ -54,9 +52,42 @@ def send(chat, msg, markdown = 2, preview = False):
         if not preview:
             u += '&disable_web_page_preview=True'
 
-        msg = get(u).json()
+        return get(u).json()
+
+
+
+def send_photo(chat, photo, msg = None, markdown = None, preview = False):
+    try:
+        u = url + f'sendPhoto?chat_id={chat}&photo={photo}'
+
+        if msg:
+            u += f'&caption={msg}'
+
+        if markdown == 2:
+            u += '&parse_mode=markdownv2'
+        elif markdown == 1:
+            u += '&parse_mode=markdown'
+
+        if not preview:
+            u += '&disable_web_page_preview=True'
+
+        if not get(u).json()['ok']:
+            raise ZeroDivisionError
 
         return msg
+    except ZeroDivisionError:
+        u = url + f'sendMessage?chat_id={chat}&text={quote_plus(escape_md(msg))}'
+
+        if markdown == 2:
+            u += '&parse_mode=markdownv2'
+        elif markdown == 1:
+            u += '&parse_mode=markdown'
+
+        if not preview:
+            u += '&disable_web_page_preview=True'
+
+        return get(u).json()
+
 
 
 def reply(update: Update, msg, markdown = 0, preview = False):
@@ -74,8 +105,10 @@ def reply_callback(update: Update, msg):
     update.callback_query.message.reply_markdown(msg.strip(), disable_web_page_preview = True)
 
 
+
 def delete(chat_id, msg_id):
     get(url + f'deleteMessage?chat_id={chat_id}&message_id={msg_id}')
+
 
 
 def pin(chat_id, msg_id):

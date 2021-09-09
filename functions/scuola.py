@@ -11,6 +11,8 @@ import os
 import globals
 
 
+
+
 __all__ = [
     'get_today',
     'compiti',
@@ -21,6 +23,8 @@ __all__ = [
 ]
 
 
+
+
 codice_scuola = 'SS16383'
 
 uname = None if globals.name else os.environ['USERNAME']
@@ -29,7 +33,6 @@ passw = None if globals.name else os.environ['PASSWORD']
 gruppo_old = 534734869
 gruppo = -1001261320605
 privata = 781455352
-
 
 mesi = {
     '01': 'GENNAIO',
@@ -85,6 +88,8 @@ def format_data(ctx):
     return '-'.join([str(i) for i in args])
 
 
+
+
 def get_today(ctx):
     session = argoscuolanext.Session(codice_scuola, uname, passw)
     arg = session.oggi()
@@ -109,74 +114,6 @@ def get_today(ctx):
     pin(chat, msg)
 
 
-def media(update, ctx):
-    return
-
-    if ctx._chat_id_and_data[0] == gruppo:
-        update.message.delete()
-        send(gruppo, 'Fai attenzione a non inviare le tue credenziali sul gruppo.')
-        return
-
-    username, password, *materia = ctx.args
-    materia = ' '.join(materia)
-    if not materia:
-        materia = 'materie'
-    session = argoscuolanext.Session("SS16383", username, password)
-    arg = session.votigiornalieri()
-    dati = arg['dati']
-    materie = {
-        'LINGUA E LETTERATURA ITALIANA':        ['ita', 'italiano'],
-        'DISEGNO E STORIA DELL\'ARTE':          ['art', 'arte', 'disegno'],
-        'FILOSOFIA':                            ['fil', 'filo', 'filosofia'],
-        'EDUCAZIONE CIVICA':                    ['edc', 'civica', 'ed civica', 'educazione civica'],
-        'SCIENZE NATURALI':                     ['sci', 'scie', 'scienze'],
-        'RELIGIONE':                            ['rel', 'religione'],
-        'MATEMATICA':                           ['mat', 'mate', 'matematica'],
-        'SCIENZE MOTORIE E SPORTIVE':           ['edf', 'ed fisica', 'educazione fisica'],
-        'LINGUA E LETTERATURA LATINA':          ['lat', 'latino'],
-        'STORIA':                               ['sto', 'storia'],
-        'LINGUA E CULTURA STRANIERA INGLESE':   ['ing', 'inglese'],
-        'FISICA':                               ['fis', 'fisica']
-    }
-
-    if datetime.today().day > 8:
-        periodo = 1
-    else:
-        periodo = 2
-
-    valid = {i['desMateria']: {} for i in dati}
-    for i in dati:
-        if i['decValore'] != None:
-            r = int(i['datGiorno'].split('-')[1])
-            if (periodo == 1 and (r > 8 or r == 1)) or (periodo == 2 and 1 < r < 8):
-                valid[i['desMateria']][i['datGiorno']] = float(i['decValore'])
-
-    if materia:
-        if materia not in sum(materie.values(), []) and not materia == 'materie':
-            reply(update, f'{materia} non è una materia.')
-            return
-        else:
-            for k, v in materie.items():
-                if materia in v:
-                    materia = k
-
-        if not materia == 'materie':
-            media = sum(valid[materia].values()) / len(valid[materia].values())
-        else:
-            c, media = 1, 0
-            for i in valid.values():
-                if list(valid.keys())[c - 1] in ('RELIGIONE', 'EDUCAZIONE CIVICA'):
-                    c += 1; continue
-                #print('{:<40}'.format(list(valid.keys())[c - 1]), sum(i.values()) / len(i.values()))
-                media += sum(i.values()) / len(i.values())
-                c += 1
-            media /= 10
-    #else:
-    #    a = [float(i) for i in (list(valid.values())[0].values())]
-    #    media = sum(a) / len(a)
-    media = round(media, 3)
-    del session
-    update.message.reply_text(str(media))
 
 
 def compiti(update, ctx):
@@ -202,6 +139,8 @@ def compiti(update, ctx):
     reply(update, msg, markdown = 2)
 
 
+
+
 def verifica(ctx):
     session = argoscuolanext.Session("SS16383", uname, passw)
     arg = [i['dati'] for i in session.oggi()['dati'] if i['titolo'] == 'Promemoria']
@@ -212,6 +151,8 @@ def verifica(ctx):
             ctx.bot.send_poll(gruppo, f'Come è andata la verifica di {materia} di oggi?',
                 ['Molto bene', 'Bene, dai', 'Poteva andare peggio...', 'Meh',
                 'Me la aspettavo più facile', 'Lasciamo perdere', 'Domanda di riserva?'])
+
+
 
 
 def promemoria_giornaliero(ctx):
@@ -251,6 +192,8 @@ def promemoria_giornaliero(ctx):
     send(gruppo, msg)
 
 
+
+
 def promemoria(update, ctx):
     data = format_data(ctx)
     session = argoscuolanext.Session("SS16383", uname, passw)
@@ -270,6 +213,8 @@ def promemoria(update, ctx):
 
     del session
     reply(update, msg, markdown = 2)
+
+
 
 
 def sacrifica(update, ctx):

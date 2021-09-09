@@ -3,13 +3,15 @@ from selenium.webdriver                                     import DesiredCapabi
 from bs4                                                    import BeautifulSoup as bs
 from selenium.webdriver.support.ui                          import WebDriverWait
 from selenium                                               import webdriver
+from requests                                               import get, post
 from selenium.webdriver.chrome.options                      import Options
 from json                                                   import loads
 from time                                                   import sleep
-from requests                                               import post
 from selenium.webdriver.common.by                           import By
+from telegram.ext.callbackcontext import CallbackContext
+from telegram.update import Update
 
-from .utils import send, escape_md
+from .utils                                                 import reply, send, escape_md, send_photo
 
 import heroku3
 import os
@@ -17,19 +19,20 @@ import os
 import globals
 
 
+
 # VARIABLES
 
-hkey  = None if globals.name else os.environ['HKEY']
-hname = None if globals.name else os.environ['HNAME']
+hkey     = None if globals.name else os.environ['HKEY']
+hname    = None if globals.name else os.environ['HNAME']
+
+uname    = None if globals.name else os.environ['USERNAME']
+passw    = None if globals.name else os.environ['PASSWORD']
 
 news_channel = -1001568629792
 
-uname = None if globals.name else os.environ['USERNAME']
-passw = None if globals.name else os.environ['PASSWORD']
 
 
-
-# per accorciare gli URL con Bitly
+# PER ACCORCIARE GLI URL CON BITLY
 
 bittoken = '' if globals.name else os.environ['BITTOKEN']
 
@@ -37,6 +40,8 @@ header = {'Authorization': 'Bearer ' + bittoken, 'Content-Type': 'application/js
 
 capabilities = DesiredCapabilities.CHROME
 capabilities["goog:loggingPrefs"] = {"performance": "ALL"}
+
+
 
 
 # opzioni per Chrome
@@ -47,7 +52,9 @@ options.add_argument('--disable-gpu')
 
 
 __all__ = [
-    'get_news'
+    'get_news',
+    'get_news_command',
+    'get_news_job'
 ]
 
 
@@ -87,12 +94,11 @@ def get_news(ctx):
             if i[0] == 'Oggetto':
                 ogg = f'NUOVA *{i[1][:-1].upper()}E* DALLA SCUOLA\n\n'
             elif i[0] == 'Messaggio':
-                msg = i[1] + '\n\n\n'
-
+                msg = i[1] + '\n\n'
                 save = ''.join([x[0] for x in msg.split()])
 
                 if save == hnews:
-                    print(f'Il Messaggio è lo stesso:\n{msg}')
+                    send(-1001533648966, f'Il Messaggio è lo stesso:\n{msg}')
                     return
             elif i[0] == 'File':
                 files[i[1]] = None
@@ -123,15 +129,15 @@ def get_news(ctx):
         if len(files) == 0:
             files = {'circ_allegato.pdf': 'https://youtu.be/kw1kc2U6NmA'}
 
-        files = 'File allegati:\n  ‣ ' + '\n  ‣ '.join([f'[{escape_md(k)}]({v})' for k, v in files.items()])
+        files = '*FILE ALLEGATI:*\n  ‣ ' + '\n  ‣ '.join([f'[{escape_md(k)}]({v})' for k, v in files.items()])
 
         if len(urls) > 0:
-            urls = '\n\n\nUrl allegati:\n  ‣ ' + '\n  ‣ '.join(urls)
+            urls = '\n\n*URL ALLEGATI:*\n  ‣ ' + '\n  ‣ '.join(urls)
         else:
             urls = ''
 
         if pv:
-            pv = '\n\n\nNOTA: c\'è da confermare presa visione.'
+            pv = '\n\nNOTA: c\'è da confermare presa visione.'
         else:
             pv = ''
 
@@ -139,6 +145,150 @@ def get_news(ctx):
 
     send(news_channel, res)
 
-    app = heroku3.from_key(hkey).app(hname)
-    config = app.config()
-    config['NEWS'] = save
+    heroku3.from_key(hkey).app(hname).config()['NEWS'] = save
+
+
+
+
+def format_url(url):
+    if url.startswith('/'):
+        return 'https://www.liceopeanomonterotondo.edu.it/' + url[1:]
+    elif not url.startswith('http'):
+        return 'https://www.liceopeanomonterotondo.edu.it/' + url
+
+    return url
+
+
+
+
+def get_news_website(num, last = None):
+    url = 'https://www.liceopeanomonterotondo.edu.it/homepage'
+    images = None
+
+    if num > 11:
+        url += f'?page={(num - 1) // 11}'
+
+
+    # OTTIENE LA PAGINA DEL SITO DELLA SCUOLA
+
+    req = bs(get(url).content, 'html.parser')
+
+    last_news = req.find('div', {'class': f'views-row-{num % 11}'}).find_all('span', {'class': 'field-content'})
+
+    news_title = last_news[0].text
+    date, type = last_news[1].text.strip().split(' - ')
+
+
+    # OTTIENE L'URL DELL'ARTICOLO
+
+    last_news_url = format_url(last_news[0].find('a')['href'])
+
+    if last and last_news_url == globals.lnu:
+        return
+    elif last:
+        globals.lnu = last_news_url
+        globals.max_news += 1
+
+
+    # OTTIENE LA PAGINA DELL'ARTICOLO DALL'URL APPENA ESTRATTO
+
+    req2 = bs(get(last_news_url).content, 'html.parser')
+
+
+    # RACCOGLIE LE ULTIME INFORMAZIONI E LE ORGANIZZA PER INVIARLE
+
+    if last:
+        num = 'NUOVO POST'
+    elif num % 11 == 1:
+        num = 'ULTIMO POST'
+    elif num == globals.max_news:
+        num = 'PRIMO POST'
+    else:
+        num = f'{num}° POST PIÙ RECENTE'
+
+    if type == 'Circolari':
+        type = type[:-1] + 'e'
+    elif type not in ['Articolo', 'Atto']:
+        send(-1001533648966, f'WARNING: Il tipo di post sul sito è nuovo:\n{type}')
+        return
+
+    title = f'[*{num} SUL SITO DELLA SCUOLA*]({last_news_url})\n\n*DATA:*\n' + date
+
+    fields = req2.find_all('div', {'class': 'field-item even'})
+
+    fields_text = [i for i in fields if not i.text.strip().startswith('Allegat')]
+    attachments = [i for i in fields if i.text.strip().startswith('Allegat')]
+
+
+    # ESTRAE IL TESTO DEL POST
+
+    text = ''
+
+    for i in fields_text:
+        if type == 'Circolare':
+            text += '\n'.join(
+                [
+                    escape_md(j.text) for j in i.find_all('p')
+                    if not j.has_attr('class') and not j.text.strip().lower().startswith('oggetto')
+                ]
+            ).strip() + '\n'
+        else:
+            temptext = [
+                '[' + escape_md(j.text) + '](' + format_url(j['href']) + ')' if j.has_attr('href') else escape_md(j.text.strip())
+                for j in i.find_all(['p', 'a']) if j.parent.name != 'a' and not j.find('a') and j.text.strip()
+            ]
+
+            images = [j.strip().replace('[](', '')[:-1] for j in temptext if '[]' in i]
+            images_2 = [format_url(j['src']) for j in i.find_all('img')]
+
+            images += [i for i in images_2 if i not in images]
+
+            text += '\n'.join([i for i in temptext if '[]' not in i]).strip() + '\n'
+
+    if text.strip():
+        text = '\n*TESTO:*\n' + text.strip()
+
+
+    # ESTRAE TUTTI GLI ALLEGATI SE CE NE SONO
+
+    if attachments:
+        attachments_text = '\n*ALLEGATI:*\n'
+
+        for i in attachments[0].find_all('a'):
+            attachments_text += ' ‣ [' + escape_md(i.text) + '](' + i['href'] + ')\n'
+    else:
+        attachments_text = ''
+
+    return f'{title}\n\n*TIPO:*\n{type}\n\n*OGGETTO:*\n{escape_md(news_title)}\n{text}\n{attachments_text}', images
+
+
+
+
+def get_news_command(update, ctx):
+    num = int(ctx.args[0]) if len(ctx.args) > 0 else 1
+
+    if num > globals.max_news:
+        num = globals.max_news
+
+    text, images = get_news_website(num)
+
+    reply(update, text, 2)
+
+    if images:
+        for i in images:
+            update.message.reply_photo(i)
+
+
+
+
+def get_news_job(ctx):
+    result = get_news_website(1, True)
+
+    if result:
+        text, images = result
+
+        send(-1001568629792, text)
+
+        if images:
+            for i in images:
+                send_photo(-1001568629792, i)

@@ -3,30 +3,43 @@ from google.oauth2.credentials      import Credentials
 from google.auth.transport.requests import Request
 from googleapiclient.discovery      import build
 
-import os.path
+import os
+
 
 name = False
-
 creds = None
+
 
 SCOPES = [
     'https://www.googleapis.com/auth/classroom.courses.readonly',
     'https://www.googleapis.com/auth/classroom.announcements.readonly',
-    'https://www.googleapis.com/auth/classroom.student-submissions.me.readonly'
+    'https://www.googleapis.com/auth/classroom.student-submissions.me.readonly',
+    #'https://www.googleapis.com/auth/classroom.profile.photos',
+    #'https://www.googleapis.com/auth/classroom.profile.emails',
+    #'https://www.googleapis.com/auth/classroom.guardianlinks.me.readonly',
+    'https://www.googleapis.com/auth/classroom.courseworkmaterials.readonly',
+    'https://www.googleapis.com/auth/classroom.topics.readonly'
 ]
 
-#if os.path.exists('token.json'):
+
 creds = Credentials.from_authorized_user_file('token.json', SCOPES)
 
-#if not creds or not creds.valid:
-#    if creds and creds.expired and creds.refresh_token:
-#        creds.refresh(Request())
-#    else:
-#        flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
-#        creds = flow.run_local_server(port = 8080)
+'''
+if not creds or not creds.valid:
+    if creds and creds.expired and creds.refresh_token:
+        creds.refresh(Request())
+    else:
+        flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
+        creds = flow.run_local_server(port = 8080)
 
-#    with open('token.json', 'w') as token:
-#        token.write(creds.to_json())
+    with open('token.json', 'w') as token:
+        token.write(creds.to_json())
+'''
 
 service = build('classroom', 'v1', credentials = creds).courses()
 courses = service.list(pageSize = 15, courseStates = ['ACTIVE']).execute()['courses']
+
+
+
+lnu = None
+max_news = 70

@@ -1,7 +1,9 @@
 from telegram   import InlineKeyboardButton, InlineKeyboardMarkup
-from globals    import service, courses
 
 from .utils     import escape_md
+
+import globals
+
 
 
 
@@ -13,6 +15,7 @@ __all__ = [
     'callback_delete',
     'callback_null'
 ]
+
 
 
 
@@ -33,9 +36,11 @@ months = [
 
 
 
+
 def get_courses(update, ctx):
     keyboard = get_courses_keyboard()
     update.message.reply_markdown(text = 'Scegli un corso.', reply_markup = InlineKeyboardMarkup(keyboard))
+
 
 
 
@@ -46,10 +51,11 @@ def get_courses_keyboard():
                 i['name'],
                 callback_data = 'classchoice_' + str(i['id']) + '_' + '_'.join(i['name'].split())
             )
-        ] for i in courses
+        ] for i in globals.courses
     ] + [
         [InlineKeyboardButton('🗑️', callback_data = 'delete')]
     ]
+
 
 
 
@@ -85,6 +91,7 @@ def courses_callback_choice(update, ctx):
     )
 
     return ctx.bot.answer_callback_query(update.callback_query['id'])
+
 
 
 
@@ -125,10 +132,20 @@ def courses_callback_ann(update, ctx):
     arrows = []
 
     if page > 1:
-        arrows.append(InlineKeyboardButton('⬅️', callback_data = 'classann_page_' + id + '_' + name2 + '_' + str(page - 1)))
+        arrows.append(
+            InlineKeyboardButton(
+                '⬅️',
+                callback_data = 'classann_page_' + id + '_' + name2 + '_' + str(page - 1)
+            )
+        )
 
     if not end:
-        arrows.append(InlineKeyboardButton('➡️', callback_data = 'classann_page_' + id + '_' + name2 + '_' + str(page + 1)))
+        arrows.append(
+            InlineKeyboardButton(
+                '➡️',
+                callback_data = 'classann_page_' + id + '_' + name2 + '_' + str(page + 1)
+            )
+        )
 
     keyboard = [
         arrows,
@@ -146,8 +163,9 @@ def courses_callback_ann(update, ctx):
 
 
 
+
 def get_ann(id, name, num):
-    post = service.announcements().list(courseId = id, pageSize = num + 1).execute().get('announcements', [[], []])
+    post = globals.service.announcements().list(courseId = id, pageSize = num + 1).execute().get('announcements', [[], []])
 
     end = num == len(post)
 
@@ -155,8 +173,6 @@ def get_ann(id, name, num):
         post = post[-1]
     else:
         post = post[-2]
-
-    materials = ''
 
     if not post:
         text = '_Questo corso non ha ancora nessun annuncio\._'
@@ -168,51 +184,17 @@ def get_ann(id, name, num):
         else:
             text = f'[*ANNUNCIO IN "{name.upper()}"*](' + post['alternateLink'] + ')\n\n' + escape_md(post['text'])
 
-    if 'materials' in post:
-        materials = '\n\n*ALLEGATI:*\n'
-        mat = post['materials']
+        text += '\n'
 
-        for i in mat:
-            for j in ['driveFile', 'youtubeVideo', 'link', 'form']:
-                if j in i:
-                    obj = i[j]
-
-                    if j == 'driveFile':
-                        obj = obj[j]
-                        materials += ' ‣ [' + escape_md(obj['title']) + '](' + obj['alternateLink']
-                    elif j == 'youtubeVideo':
-                        materials += ' ‣ [' + escape_md(obj['title']) + '](' + obj['alternateLink']
-                    elif j == 'link':
-                        materials += ' ‣ [' + escape_md(obj['title']) + '](' + obj['url']
-                    elif j == 'form':
-                        materials += ' ‣ [' + escape_md(obj['title']) + '](' + obj['formUrl']
-
-                    materials += ')\n'
+    materials = get_materials(post)
 
     return text + materials, end
 
 
 
-def get_work(id, num):
-    post = service.courseWork().list(courseId = id, pageSize = num + 1).execute().get('courseWork', [[], []])
 
-    end = num == len(post)
-
-    if end:
-        post = post[-1]
-    else:
-        post = post[-2]
-
+def get_materials(post):
     materials = ''
-    date = ''
-
-    if not post:
-        text = '_Questo corso non ha ancora nessun compito\._'
-    else:
-        text = f'[*' + escape_md(post['title']).upper() + '*](' + post['alternateLink'] + ')\n'
-
-        if 'description' in post:
-            text += '\n' + escape_md(post['description']) + '\n'
 
     if 'materials' in post:
         materials = '\n*ALLEGATI:*\n'
@@ -234,6 +216,33 @@ def get_work(id, num):
                         materials += ' ‣ [' + escape_md(obj['title']) + '](' + obj['formUrl']
 
                     materials += ')\n'
+    
+    return materials
+
+
+
+
+def get_work(id, num):
+    post = globals.service.courseWork().list(courseId = id, pageSize = num + 1).execute().get('courseWork', [[], []])
+
+    end = num >= len(post)
+
+    if end:
+        post = post[-1]
+    else:
+        post = post[-2]
+
+    date = ''
+
+    if not post:
+        text = '_Questo corso non ha ancora nessun compito\._'
+    else:
+        text = f'[*' + escape_md(post['title']).upper() + '*](' + post['alternateLink'] + ')\n'
+
+        if 'description' in post:
+            text += '\n' + escape_md(post['description']) + '\n'
+
+    materials = get_materials(post)
 
     if 'dueDate' in post:
         date = '\n*DA CONSEGNARE ENTRO:*\n'
@@ -251,7 +260,6 @@ def get_work(id, num):
         month = months[month - 1]
 
         time = post['dueTime']
-
         hours = str(time['hours'])
 
         if 'mins' in time:
@@ -267,6 +275,7 @@ def get_work(id, num):
         date += f'{day} {month} {year} alle {hours}{mins}{secs}'
 
     return text + materials + date, end
+
 
 
 
@@ -300,17 +309,27 @@ def courses_callback_work(update, ctx):
         id, *name1, page = name
         name1 = ' '.join(name[1:-1])
         name2 = '_'.join(name[1:-1])
-        page = int(page)
+        page  = int(page)
 
     text, end = get_work(id, page)
 
     arrows = []
 
     if page > 1:
-        arrows.append(InlineKeyboardButton('⬅️', callback_data = 'classwork_page_' + id + '_' + name2 + '_' + str(page - 1)))
+        arrows.append(
+            InlineKeyboardButton(
+                '⬅️',
+                callback_data = 'classwork_page_' + id + '_' + name2 + '_' + str(page - 1)
+            )
+        )
 
     if not end:
-        arrows.append(InlineKeyboardButton('➡️', callback_data = 'classwork_page_' + id + '_' + name2 + '_' + str(page + 1)))
+        arrows.append(
+            InlineKeyboardButton(
+                '➡️',
+                callback_data = 'classwork_page_' + id + '_' + name2 + '_' + str(page + 1)
+            )
+        )
 
     keyboard = [
         arrows,
@@ -328,14 +347,17 @@ def courses_callback_work(update, ctx):
 
 
 
+
 def callback_delete(update, ctx):
     update.callback_query.message.delete()
     return ctx.bot.answer_callback_query(update.callback_query['id'])
 
 
 
+
 def callback_null(update, ctx):
     return ctx.bot.answer_callback_query(update.callback_query['id'])
+
 
 
 

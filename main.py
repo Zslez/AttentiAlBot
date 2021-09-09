@@ -1,10 +1,8 @@
 from telegram.ext                   import Updater, CommandHandler, MessageHandler, Filters, JobQueue, CallbackQueryHandler
 from telegram                       import InlineKeyboardButton, InlineKeyboardMarkup
-from google.oauth2.credentials      import Credentials
-from logging                        import basicConfig, DEBUG, getLogger
 from datetime                       import time, timedelta
+from logging                        import getLogger
 from random                         import choice
-from telegram.ext.callbackcontext import CallbackContext
 
 from telegram.update                import Update
 
@@ -19,7 +17,6 @@ from functions.utils                import *
 from functions.file                 import *
 from functions.news                 import *
 
-import requests
 import heroku3
 import json
 import os
@@ -28,7 +25,6 @@ import os
 
 # LOGGER
 
-#basicConfig(level = DEBUG, format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = getLogger(__name__)
 
 
@@ -36,6 +32,9 @@ logger = getLogger(__name__)
 # VARIABLES
 
 token = os.environ['TOKEN']
+
+globals.lnu = None if globals.name else os.environ['LNU']
+globals.max_news = 70 if globals.name else int(os.environ['MAXNEWS'])
 
 with open('token.json') as f:
     gtoken = json.load(f)
@@ -58,21 +57,24 @@ with open('json/bad_words_list.json', encoding = 'utf-8') as f:
 # lista dei comandi del Bot
 
 comandi = [
-    'class',
-    'compiti',
-    'sacrifica',
-    'promemoria',
-
-    'audio',
-    'cut',
-    'earrape',
-    'image',
-    'reverse',
-    'speed',
-    'speedpitch',
-    'video'
+    [
+        'class',
+        'compiti',
+        'news',
+        'sacrifica',
+        'promemoria'
+    ],
+    [
+        'audio',
+        'cut',
+        'earrape',
+        'image',
+        'reverse',
+        'speed',
+        'speedpitch',
+        'video'
+    ]
 ]
-
 
 
 
@@ -83,8 +85,7 @@ def start(update, ctx):
         reply(update, choice(['Weilà', 'Hey', 'Привет', 'ちわっす', '嘿']))
         return
 
-    reply(update, choice(['Weilà', 'Hey', 'Привет', 'ちわっす', '嘿']) + '\n' + '''
-*Info sul Bot*
+    reply(update, choice(['Weilà', 'Hey', 'Привет', 'ちわっす', '嘿']) + '\n' + '''*Info sul Bot*
 
 Con questo Bot è possibile ottenere *compiti*, *promemoria* e *notizie* \
 direttamente su Telegram senza bisogno di credenziali, sia in chat privata che sui gruppi\.
@@ -116,8 +117,7 @@ Non c'è nulla di losco, anche perché vengono usate le mie credenziali per acce
 *NOTA*, però, che per sapere se ci sono errori e per capire come correggerli, \
 [inoltro in un canale privato il testo di tutti i comandi usati](https://github.com/Zslez/AttentiAlBot/blob/master/main.py#L195), \
 quindi, *NON* inviare mai dati sensibili al Bot quando usi un comando, anche perché non è mai necessario farlo\.
-Di conseguenza, non mi prendo alcuna responsabilità per questo tipo di _incidenti_\.
-''', markdown = 2)
+Di conseguenza, non mi prendo alcuna responsabilità per questo tipo di _incidenti_\.''', markdown = 2)
 
 
 # funzione help con i vari buttons per le info
@@ -142,10 +142,10 @@ def help_keyboard():
             InlineKeyboardButton('lista comandi', callback_data = 'help_lista'),
             InlineKeyboardButton('formati data', callback_data = 'help_data')
         ],
-        [InlineKeyboardButton('COMANDI', callback_data = 'null')]
-    ] + [
-        [InlineKeyboardButton(i, callback_data = f'help_{i}') for i in j] for j in chunks(comandi, 3)
-    ] + [
+        [InlineKeyboardButton('COMANDI SCUOLA', callback_data = 'null')]
+    ] + [[InlineKeyboardButton(i, callback_data = f'help_{i}') for i in j] for j in chunks(comandi[0], 3)] + [
+        [InlineKeyboardButton('ALTRI COMANDI', callback_data = 'null')]
+    ] + [[InlineKeyboardButton(i, callback_data = f'help_{i}') for i in j] for j in chunks(comandi[1], 3)] + [
         [InlineKeyboardButton('🗑️', callback_data = 'delete')]
     ]
 
@@ -208,7 +208,7 @@ def deco(func):
             )
 
         if uid not in intusers and update.message.chat_id != gruppo:
-            send(uid, 'Invia prima un messaggio nel gruppo, così so che fai parte della classe.')
+            send(uid, 'Invia prima un messaggio nel gruppo, così so che fai parte della classe\.')
             return
 
         func(update, ctx)
@@ -224,11 +224,12 @@ def get_users(update, ctx):
 
 
 
-def update_users(ctx):
-    config = heroku3.from_key(hkey).app(hname).config()
+def update_and_restart(update, ctx = None):
+    heroku3.from_key(hkey2).app(
+        ['attenti-al-bot-2', 'attenti-al-bot'][bool(hname.replace('attenti-al-bot', ''))]
+    ).config().update({'USERS': ','.join(users), 'LNU': globals.lnu, 'MAXNEWS': globals.max_news})
 
-    if ','.join(users) != config['USERS']:
-        config['USERS'] = ','.join(users)
+    heroku3.from_key(hkey).app(hname).config().update({'USERS': ','.join(users), 'LNU': globals.lnu, 'MAXNEWS': globals.max_news})
 
 
 
@@ -291,28 +292,13 @@ def error(update, ctx):
 
 
 
-def update_token(ctx):
-    params = {
-        "grant_type": "refresh_token",
-        "client_id": gtoken['client_id'],
-        "client_secret": gtoken['client_secret'],
-        "refresh_token": gtoken['refresh_token']
-    }
+def job_deco(func):
+    def new_func(ctx):
+        send(attentiallog, f'Executing job `{func.__name__}`...', 1)
+        func(ctx)
+        send(attentiallog, f'Success\.')
 
-    authorization_url = "https://www.googleapis.com/oauth2/v4/token"
-    access_token = requests.post(authorization_url, data = params).json()['access_token']
-    gtoken['token'] = access_token
-
-    with open('token.json', 'w') as f:
-        json.dump(gtoken, f)
-
-    globals.service = globals.build(
-        'classroom',
-        'v1',
-        credentials = Credentials.from_authorized_user_file('token.json', globals.SCOPES)
-    ).courses()
-
-    globals.courses = globals.service.list(pageSize = 15, courseStates = ['ACTIVE']).execute()['courses']
+    return new_func
 
 
 
@@ -340,8 +326,9 @@ def main():
     dp.add_handler(CommandHandler("compiti",    deco(compiti)))
     dp.add_handler(CommandHandler("sacrifica",  deco(sacrifica)))
     dp.add_handler(CommandHandler("promemoria", deco(promemoria)))
-
     dp.add_handler(CommandHandler("class",      deco(get_courses)))
+
+    dp.add_handler(CommandHandler("news",       deco(get_news_command)))
 
 
     # ALIAS
@@ -364,6 +351,7 @@ def main():
     # PER ME
 
     dp.add_handler(CommandHandler("users",      deco(get_users)))
+    dp.add_handler(CommandHandler("restart",    deco(update_and_restart)))
 
 
     # ALTRI HANDLER
@@ -374,6 +362,7 @@ def main():
     dp.add_handler(CallbackQueryHandler(courses_callback_choice, pattern = '^classchoice_'))
     dp.add_handler(CallbackQueryHandler(courses_callback_ann, pattern = '^classann_'))
     dp.add_handler(CallbackQueryHandler(courses_callback_work, pattern = '^classwork_'))
+
     dp.add_handler(CallbackQueryHandler(callback_delete, pattern = '^delete'))
     dp.add_handler(CallbackQueryHandler(callback_null, pattern = '^null'))
 
@@ -398,14 +387,14 @@ def main():
     job_queue6.set_dispatcher(dp)
     job_queue7.set_dispatcher(dp)
 
-    job_queue1.run_daily(callback = change_heroku,              days = (0, 1, 2, 3, 4, 5, 6),   time = time(hour =  2, minute =  0))
-    job_queue2.run_daily(callback = verifica,                   days = (0, 1, 2, 3, 4      ),   time = time(hour = 12, minute =  0))
-    job_queue3.run_daily(callback = get_today,                  days = (0, 1, 2, 3, 4      ),   time = time(hour = 12, minute = 30))
-    job_queue4.run_daily(callback = promemoria_giornaliero,     days = (0, 1, 2, 3,       6),   time = time(hour = 13, minute =  0))
-    job_queue5.run_daily(callback = promemoria_giornaliero,     days = (0, 1, 2, 3,       6),   time = time(hour = 19, minute =  0))
-    job_queue6.run_daily(callback = update_users,               days = (0, 1, 2, 3, 4, 5, 6),   time = time(hour =  1, minute =  0))
+    job_queue1.run_daily(callback = job_deco(change_heroku),            days = (0, 1, 2, 3, 4, 5, 6),   time = time(hour =  2, minute =  0))
+    job_queue2.run_daily(callback = job_deco(verifica),                 days = (0, 1, 2, 3, 4      ),   time = time(hour = 12, minute =  0))
+    job_queue3.run_daily(callback = job_deco(get_today),                days = (0, 1, 2, 3, 4      ),   time = time(hour = 12, minute = 30))
+    job_queue4.run_daily(callback = job_deco(promemoria_giornaliero),   days = (0, 1, 2, 3,       6),   time = time(hour = 13, minute =  0))
+    job_queue5.run_daily(callback = job_deco(promemoria_giornaliero),   days = (0, 1, 2, 3,       6),   time = time(hour = 19, minute =  0))
+    job_queue6.run_daily(callback = job_deco(update_and_restart),       days = (0, 1, 2, 3, 4, 5, 6),   time = time(hour =  1, minute =  0))
 
-    job_queue7.run_repeating(callback = update_token, interval = timedelta(hours = 1), first = 10)
+    job_queue7.run_repeating(callback = job_deco(get_news_job),         first = 10,                     interval = timedelta(minutes  = 30))
 
     job_queue1.start()
     job_queue2.start()
@@ -418,7 +407,7 @@ def main():
 
     # PRENDE LE NEWS DALLA BACHECA
 
-    up.job_queue.run_repeating(callback = get_news, interval = timedelta(minutes = 150), first = 100)
+    up.job_queue.run_repeating(callback = get_news, interval = timedelta(hours = 3), first = 100)
 
     up.start_polling()
 

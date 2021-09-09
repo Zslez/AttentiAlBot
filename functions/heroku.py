@@ -17,6 +17,7 @@ import globals
 __all__ = [
     'change_heroku',
     'hkey',
+    'hkey2',
     'hname'
 ]
 
@@ -35,7 +36,7 @@ def change_heroku(ctx):
 
     send(
         -1001533648966,
-        f'rimangono `{res}`` ore su `' +  ['attenti-al-bot', 'attenti-al-bot-2'][string] + '`.'
+        f'rimangono `{res}` ore su `' +  ['attenti-al-bot', 'attenti-al-bot-2'][string] + '`\.'
     )
 
     if res < 100:
