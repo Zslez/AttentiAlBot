@@ -1,4 +1,4 @@
-json/classe.json
+classe.json
 credentials.json
 token.json
 
@@ -6,7 +6,6 @@ simple_images
 video
 
 .git2
-.gitold
 
 up.bat
 

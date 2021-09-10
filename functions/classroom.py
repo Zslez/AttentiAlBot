@@ -38,8 +38,9 @@ months = [
 
 
 def get_courses(update, ctx):
-    keyboard = get_courses_keyboard()
-    update.message.reply_markdown(text = 'Scegli un corso.', reply_markup = InlineKeyboardMarkup(keyboard))
+    if update.message:
+        keyboard = get_courses_keyboard()
+        update.message.reply_markdown(text = 'Scegli un corso.', reply_markup = InlineKeyboardMarkup(keyboard))
 
 
 
@@ -165,7 +166,10 @@ def courses_callback_ann(update, ctx):
 
 
 def get_ann(id, name, num):
-    post = globals.service.announcements().list(courseId = id, pageSize = num + 1).execute().get('announcements', [[], []])
+    post = globals.service.announcements().list(
+        courseId = id,
+        pageSize = num + 1
+    ).execute().get('announcements', [[], []])
     name = escape_md(name)
 
     end = num == len(post)
@@ -224,7 +228,10 @@ def get_materials(post):
 
 
 def get_work(id, num):
-    post = globals.service.courseWork().list(courseId = id, pageSize = num + 1).execute().get('courseWork', [[], []])
+    post = globals.service.courseWork().list(
+        courseId = id,
+        pageSize = num + 1
+    ).execute().get('courseWork', [[], []])
 
     end = num == len(post)
 
@@ -351,21 +358,31 @@ def f(service, courseslist, num):
     courses = service
 
     courseWorks = courses.courseWork()
-    courseWorks = [courseWorks.list(courseId = i['id'], pageSize = num).execute().get('courseWork', [[]])[-1] for i in courseslist]
+    courseWorks = [
+        courseWorks.list(
+            courseId = i['id'],
+            pageSize = num
+        ).execute().get('courseWork', [[]])[-1] for i in courseslist
+    ]
 
     announcements = courses.announcements()
-    announcements = [announcements.list(courseId = i['id'], pageSize = num).execute().get('announcements', [[]])[-1] for i in courseslist]
+    announcements = [
+        announcements.list(
+            courseId = i['id'],
+            pageSize = num
+        ).execute().get('announcements', [[]])[-1] for i in courseslist
+    ]
 
     print(announcements)
     input()
 
-    titles          = [i[0]['title']            if i and 'title'            in i[0] else None for i in courseWorks]
-    descriptions    = [i[0]['description']      if i and 'description'      in i[0] else None for i in courseWorks]
-    materials       = [i[0]['materials']        if i and 'materials'        in i[0] else None for i in courseWorks]
-    worklinks       = [i[0]['alternateLink']    if i and 'alternateLink'    in i[0] else None for i in courseWorks]
+    titles       = [i[0]['title']         if i and 'title'         in i[0] else None for i in courseWorks]
+    descriptions = [i[0]['description']   if i and 'description'   in i[0] else None for i in courseWorks]
+    materials    = [i[0]['materials']     if i and 'materials'     in i[0] else None for i in courseWorks]
+    worklinks    = [i[0]['alternateLink'] if i and 'alternateLink' in i[0] else None for i in courseWorks]
 
-    duedates        = [i[0]['dueDate']          if i and 'dueDate'          in i[0] else None for i in courseWorks]
-    duetimes        = [i[0]['dueTime']          if i and 'dueTime'          in i[0] else None for i in courseWorks]
+    duedates     = [i[0]['dueDate']       if i and 'dueDate'       in i[0] else None for i in courseWorks]
+    duetimes     = [i[0]['dueTime']       if i and 'dueTime'       in i[0] else None for i in courseWorks]
 
     print(len(titles))
 

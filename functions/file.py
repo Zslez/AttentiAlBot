@@ -1,11 +1,13 @@
-import os
 from simple_image_download.simple_image_download    import simple_image_download
 from os                                             import listdir, remove, rename
+from subprocess                                     import run as run2
 from urlextract                                     import URLExtract
 from shutil                                         import rmtree
-from subprocess                                     import run
 
 from .utils                                         import *
+
+import os
+
 
 
 __all__ = [
@@ -16,8 +18,10 @@ __all__ = [
     'cut_audio_video',
     'reverse_audio_video',
     'speed_audio_video',
-    'speed_pitch_audio_video'
+    'speed_pitch_audio_video',
+    'loop_audio_video'
 ]
+
 
 
 exts = (
@@ -28,6 +32,72 @@ exts = (
 
 extract = URLExtract().find_urls
 download = simple_image_download().download
+
+
+
+def run(cmd):
+    return run2(cmd, shell = True, check = True, stdout = -1)
+
+
+
+def get_value(ctx, max_v, min_v, default = None, null = None):
+    if len(ctx.args) > 0:
+        value = float(ctx.args[0])
+
+        if value > max_v:
+            value = max_v
+        elif value < min_v:
+            value = min_v
+    else:
+        value = default
+
+    if value == null:
+        return
+
+    return value
+
+
+
+def is_video(ext, video):
+    cmd = run(f'ffprobe -loglevel error -show_entries stream=codec_type -of csv=p=0 "{video}"')
+    return ext in exts and 'video' in cmd.stdout.decode()
+
+
+
+def get_size(video):
+    cmd = f'ffprobe -v error -select_streams v -show_entries stream=width,height -of csv=p=0:s=x "{video}"'
+    return run(cmd).stdout.decode().split('x')
+
+
+
+def check_file(update, file_name, file_id, mb = 20):
+    if file_name.count('.') == 0:
+        return
+
+    if mb > 20:
+        mb = 20
+
+    new = download_file(file_id, mb)
+
+    if new == None:
+        reply(update, 'Il file è troppo pesante.')
+        return
+
+    return file_name, new
+
+
+
+def ffmpeg(inp, out, cmd_after, oga = '', cmd_before = ''):
+    if inp.split('.')[-1] == 'oga':
+        return run(f'ffmpeg {cmd_before} -i "{inp}" -c:a libopus {cmd_after} "{out}"')
+    else:
+        return run(f'ffmpeg {cmd_before} -i "{inp}" {oga} {cmd_after} "{out}"')
+
+
+
+
+## ==================================================== ##
+
 
 
 
@@ -45,40 +115,23 @@ def image(update, ctx):
 
 
 def earrape(update, ctx):
-    if len(ctx.args) > 0:
-        value = 5 * float(ctx.args[0])
-
-        if value > 50:
-            value = 50
-        elif value < -50:
-            value = -50
-    else:
-        value = 20
-
-    if value == 0:
+    if (value := get_value(ctx, 10, -10, 4, 0)) == None:
         return
+
+    value *= 5
 
     msg_id, file_name, file_id = get_reply(update)
 
-    if file_name.count('.') == 0:
+    if not (check := check_file(update, file_name, file_id)):
         return
 
-    new_ = download_file(file_id)
+    file_name, new = check
+    ext = new.split('.')[-1].lower()
 
-    if new_ == None:
-        reply(update, 'Il file è troppo pesante.')
-        return
-    
-    if new_.split('.')[-1] == 'oga':
-        run(f'ffmpeg -i "{new_}" -c:a libopus -b:a 192k -af "volume={value}dB" "{file_name}"', shell = True)
-    else:
-        ext = new_.split('.')[-1].lower()
+    if is_video(ext, new):
+        file_name = '.'.join(file_name.split('.')[:-1]) + '.mp3'
 
-        if ext in exts and 'video' in run(f'ffprobe -loglevel error -show_entries stream=codec_type -of csv=p=0 "{new_}"',
-                shell = True, stdout = -1).stdout.decode():
-            file_name = '.'.join(file_name.split('.')[:-1]) + '.mp3'
-
-        run(f'ffmpeg -i "{new_}" -vn -ar 44100 -ac 2 -b:a 192k -af "volume={value}dB" "{file_name}"', shell = True)
+    ffmpeg(new, file_name, f'-b:a 192k -af "volume={value}dB"', '-vn -ar 44100 -ac 2')
 
     with open(file_name, 'rb') as f:
         try:
@@ -86,11 +139,8 @@ def earrape(update, ctx):
         except:
             reply(update, 'Il file è troppo pesante.')
 
-    try:
-        remove(new_)
-        remove(file_name)
-    except:
-        pass
+    remove(new)
+    remove(file_name)
 
 
 
@@ -100,48 +150,39 @@ def to_audio(update, ctx):
     if len(ctx.args) == 0:
         m = update.to_dict()['message']
 
-        if 'reply_to_message' in m:
-            reply_msg = m['reply_to_message']
-            msg_id = reply_msg['message_id']
+        if not 'reply_to_message' in m:
+            return
 
-            if 'text' in reply_msg:
-                url = extract(reply_msg['text'])
+        reply_msg = m['reply_to_message']
+        msg_id = reply_msg['message_id']
 
-                if url:
-                    url = url[0]
-                else:
-                    if 'entities' in reply_msg:
-                        for i in reply_msg['entities']:
-                            if 'url' in i:
-                                url = i['url']
-                                break
-                
-                if not url:
-                    return
-            else:
-                video_to_audio(update)
-                return
+        if 'text' not in reply_msg:
+            video_to_audio(update)
+            return
+
+        url = extract(reply_msg['text'])
+
+        if url:
+            url = url[0]
         else:
+            if 'entities' in reply_msg:
+                for i in reply_msg['entities']:
+                    if 'url' in i:
+                        url = i['url']
+                        break
+
+        if not url:
             return
     else:
         url = ctx.args[0]
 
-    run(f'youtube-dl -o "%(title)s.%(ext)s" --extract-audio --audio-format mp3 {url}', shell = True)
+    run(f'youtube-dl -o "%(title)s.%(ext)s" --extract-audio --audio-format mp3 {url}')
+    name = run(f'youtube-dl --get-filename -o "%(title)s.%(ext)s" {url}').stdout.decode().strip()
 
-    a = run(
-        f'youtube-dl --get-filename -o "%(title)s.%(ext)s" {url}',
-        shell = True,
-        stdout = -1
-    ).stdout.decode().strip()
-
-    base = '.'.join(a.split('.')[:-1]).split('\\')[-1]
+    base = '.'.join(name.split('.')[:-1]).split('\\')[-1]
 
     with open(base + '.mp3', 'rb') as f:
-        update.message.reply_audio(
-            f,
-            base + '.mp3',
-            reply_to_message_id = msg_id
-        )
+        update.message.reply_audio(f, base + '.mp3', reply_to_message_id = msg_id)
 
     remove(base + '.mp3')
 
@@ -153,60 +194,47 @@ def to_video(update, ctx):
     if len(ctx.args) == 0:
         m = update.to_dict()['message']
 
-        if 'reply_to_message' in m:
-            reply_msg = m['reply_to_message']
-            msg_id = reply_msg['message_id']
-
-            if 'text' in reply_msg:
-                url = extract(reply_msg['text'])[0]
-            else:
-                return
-        else:
+        if 'reply_to_message' not in m:
             return
+
+        reply_msg = m['reply_to_message']
+        msg_id = reply_msg['message_id']
+
+        if 'text' not in reply_msg:
+            return
+
+        url = extract(reply_msg['text'])[0]
     else:
         url = ctx.args[0]
 
-    run(f'youtube-dl --max-filesize 40m -o "%(title)s.%(ext)s" -f best {url}', shell = True, check = True)
+    run(f'youtube-dl --max-filesize 40m -o "%(title)s.%(ext)s" -f best {url}')
+    name = run(f'youtube-dl --get-filename -o "%(title)s.%(ext)s" {url}').stdout.decode().strip()
+    name = name.split('\\')[-1]
 
-    a = run(
-        f'youtube-dl --get-filename -o "%(title)s.%(ext)s" {url}',
-        shell = True,
-        stdout = -1
-    ).stdout.decode().strip()
-
-    a = a.split('\\')[-1]
-
-    if not os.path.exists(a):
+    if not os.path.exists(name):
         reply(update, 'Il video è troppo pesante.')
         return
 
-    with open(a, 'rb') as f:
-        update.message.reply_video(f, a, reply_to_message_id = msg_id)
+    with open(name, 'rb') as f:
+        update.message.reply_video(f, name, reply_to_message_id = msg_id)
 
-    remove(a)
+    remove(name)
 
 
 
 def video_to_audio(update):
     msg_id, file_name, file_id = get_reply(update)
-
-    if file_name.count('.') == 0:
-        return
-
     file_name = '.'.join(file_name.split('.')[:-1]) + '.mp3'
-    dl = download_file(file_id)
 
-    if dl == None:
-        reply(update, 'Il file è troppo pesante.')
+    if not (check := check_file(update, file_name, file_id)):
         return
 
-    rename(dl, file_name)
+    file_name, new = check
+
+    rename(new, file_name)
 
     with open(file_name, 'rb') as f:
-        try:
-            update.message.reply_audio(f, file_name, reply_to_message_id = msg_id)
-        except:
-            reply(update, 'Il file è troppo pesante.')
+        update.message.reply_audio(f, file_name, reply_to_message_id = msg_id)
 
     remove(file_name)
 
@@ -220,227 +248,154 @@ def cut_audio_video(update, ctx):
 
     msg_id, file_name, file_id = get_reply(update)
 
-    if file_name.count('.') == 0:
+    if not (check := check_file(update, file_name, file_id)):
         return
 
-    new_ = download_file(file_id)
+    file_name, new = check
+    ext = new.split('.')[-1].lower()
+    video = is_video(ext, new)
 
-    if new_ == None:
-        reply(update, 'Il file è troppo pesante.')
-        return
+    if video:
+        w, h = get_size(new)
 
-    ext = new_.split('.')[-1].lower()
+    ffmpeg(
+        new,
+        file_name,
+        f'-to {int(sec2 // 3600)}:{int((sec2 % 3600) // 60)}:{sec2 % 60} -c copy',
+        '',
+        f'-ss {int(sec1 // 3600)}:{int((sec1 % 3600) // 60)}:{sec1 % 60}'
+    )
 
-    if ext in exts and 'video' in run(f'ffprobe -loglevel error -show_entries stream=codec_type -of csv=p=0 "{new_}"',
-            shell = True, stdout = -1).stdout.decode():
+    with open(file_name, 'rb') as f:
+        if video:
+            update.message.reply_video(f, file_name, reply_to_message_id = msg_id, width = w, height = h)
+        else:
+            update.message.reply_audio(f, file_name, reply_to_message_id = msg_id)
 
-        w, h = run(f'ffprobe -v error -select_streams v -show_entries stream=width,height -of csv=p=0:s=x "{new_}"',
-            shell = True, stdout = -1).stdout.decode().split('x')
-
-        run(f'ffmpeg -ss {int(sec1 // 3600)}:{int((sec1 % 3600) // 60)}:{sec1 % 60} -i "{new_}"' \
-            f' -to {int(sec2 // 3600)}:{int((sec2 % 3600) // 60)}:{sec2 % 60} -c copy "{file_name}"', shell = True)
-
-        with open(file_name, 'rb') as f:
-            try:
-                update.message.reply_video(f, file_name, reply_to_message_id = msg_id, width = w, height = h)
-            except:
-                reply(update, 'Il file è troppo pesante.')
-    else:
-        run(f'ffmpeg -ss {int(sec1 // 3600)}:{int((sec1 % 3600) // 60)}:{sec1 % 60} -i "{new_}"' \
-            f' -to {int(sec2 // 3600)}:{int((sec2 % 3600) // 60)}:{sec2 % 60} -c copy "{file_name}"', shell = True)
-
-        with open(file_name, 'rb') as f:
-            try:
-                update.message.reply_audio(f, file_name, reply_to_message_id = msg_id)
-            except:
-                reply(update, 'Il file è troppo pesante.')
-
-    try:
-        remove(new_)
-        remove(file_name)
-    except:
-        pass
+    remove(new)
+    remove(file_name)
 
 
 
 def reverse_audio_video(update, ctx):
     msg_id, file_name, file_id = get_reply(update)
 
-    if file_name.count('.') == 0:
+    if not (check := check_file(update, file_name, file_id)):
         return
 
-    new_ = download_file(file_id)
+    file_name, new = check
+    ext = new.split('.')[-1].lower()
 
-    if new_ == None:
-        reply(update, 'Il file è troppo pesante.')
-        return
+    if is_video(ext, new):
+        cmd = 'ffprobe -v error -show_entries format=duration ' \
+            f'-of default=noprint_wrappers=1:nokey=1 "{new}"'
 
-    ext = new_.split('.')[-1].lower()
+        if float(run(cmd).stdout.decode()) > 8:
+            update.message.reply_markdown(
+                'Al momento non è possibile fare il reverse di video troppo lunghi ' \
+                'perché richede più memoria di quella che mi viene concessa dal server. 😔'
+            )
 
-    if ext in exts and 'video' in run(f'ffprobe -loglevel error -show_entries stream=codec_type -of csv=p=0 "{new_}"',
-            shell = True, stdout = -1).stdout.decode():
-
-        if float(run(f'ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "{new_}"',
-            shell = True, stdout = -1).stdout.decode()) > 8:
-            update.message.reply_markdown('Al momento non è possibile fare il reverse di video troppo lunghi ' \
-                'perché richede più memoria di quella che mi viene concessa dal server. 😔')
-
-            try:
-                remove(new_)
-                remove(file_name)
-            except:
-                pass
+            remove(new)
+            remove(file_name)
 
             return
 
-        w, h = run(f'ffprobe -v error -select_streams v -show_entries stream=width,height -of csv=p=0:s=x "{new_}"',
-            shell = True, stdout = -1).stdout.decode().split('x')
+        w, h = get_size(new)
 
-        run(F'ffmpeg -i "{new_}" -vf reverse -af areverse "{file_name}"', shell = True)
+        ffmpeg(new, file_name, '-vf reverse -af areverse')
 
         with open(file_name, 'rb') as f:
-            try:
-                update.message.reply_video(f, file_name, reply_to_message_id = msg_id, width = w, height = h)
-            except:
-                reply(update, 'Il file è troppo pesante.')
+            update.message.reply_video(f, file_name, reply_to_message_id = msg_id, width = w, height = h)
     else:
-        if new_.split('.')[-1] == 'oga':
-            run(F'ffmpeg -i "{new_}" -c:a libopus -b:a 192k -af areverse "{file_name}"', shell = True, check = True)
-        else:
-            run(F'ffmpeg -i "{new_}" -b:a 192k -af areverse "{file_name}"', shell = True)
+        ffmpeg(new, file_name, '-b:a 192k -af areverse')
 
         with open(file_name, 'rb') as f:
-            try:
-                update.message.reply_audio(f, file_name, reply_to_message_id = msg_id)
-            except:
-                reply(update, 'Il file è troppo pesante.')
+            update.message.reply_audio(f, file_name, reply_to_message_id = msg_id)
 
-    try:
-        remove(new_)
-        remove(file_name)
-    except:
-        pass
+    remove(new)
+    remove(file_name)
 
 
 
 def speed_audio_video(update, ctx):
-    if len(ctx.args) > 0:
-        value = float(ctx.args[0])
-
-        if value > 10:
-            value = 10
-        elif value < 0.5:
-            value = 0.5
-    else:
-        return
+    value = get_value(ctx, 10, 0.5, None, 1)
 
     msg_id, file_name, file_id = get_reply(update)
 
-    if file_name.count('.') == 0:
+    if not (check := check_file(update, file_name, file_id)):
         return
 
-    if value == 1:
-        return
+    file_name, new = check
+    ext = new.split('.')[-1].lower()
 
-    new_ = download_file(file_id)
+    if is_video(ext, new):
+        w, h = get_size(new)
 
-    if new_ == None:
-        reply(update, 'Il file è troppo pesante.')
-        return
-
-    ext = new_.split('.')[-1].lower()
-
-    if ext in exts and 'video' in run(f'ffprobe -loglevel error -show_entries stream=codec_type -of csv=p=0 "{new_}"',
-            shell = True, stdout = -1).stdout.decode():
-
-        w, h = run(f'ffprobe -v error -select_streams v -show_entries stream=width,height -of csv=p=0:s=x "{new_}"',
-            shell = True, stdout = -1).stdout.decode().split('x')
-
-        
-        run(F'ffmpeg -i "{new_}" -af atempo={value} -filter:v "setpts=PTS/{value}" "{file_name}"', shell = True)
+        ffmpeg(new, file_name, f'-af atempo={value} -filter:v "setpts=PTS/{value}"')
 
         with open(file_name, 'rb') as f:
-            try:
-                update.message.reply_video(f, file_name, reply_to_message_id = msg_id, width = w, height = h)
-            except:
-                reply(update, 'Il file è troppo pesante.')
+            update.message.reply_video(f, file_name, reply_to_message_id = msg_id, width = w, height = h)
     else:
-        if new_.split('.')[-1] == 'oga':
-            run(F'ffmpeg -i "{new_}" -c:a libopus -af atempo={value} "{file_name}"', shell = True)
-        else:
-            run(F'ffmpeg -i "{new_}" -af atempo={value} "{file_name}"', shell = True)
+        ffmpeg(new, file_name, f'-af atempo={value}')
 
         with open(file_name, 'rb') as f:
-            try:
-                update.message.reply_audio(f, file_name, reply_to_message_id = msg_id)
-            except:
-                reply(update, 'Il file è troppo pesante.')
+            update.message.reply_audio(f, file_name, reply_to_message_id = msg_id)
 
-    try:
-        remove(new_)
-        remove(file_name)
-    except:
-        pass
+    remove(new)
+    remove(file_name)
 
 
 
 def speed_pitch_audio_video(update, ctx):
-    if len(ctx.args) > 0:
-        value = float(ctx.args[0])
-
-        if value > 10:
-            value = 10
-        elif value < 0.2:
-            value = 0.2
-    else:
-        return
-
-    error = 0.9189441
+    value = get_value(ctx, 10, 0.5, None, 1)
+    real = value / .9188
 
     msg_id, file_name, file_id = get_reply(update)
 
-    if file_name.count('.') == 0:
+    if not (check := check_file(update, file_name, file_id)):
         return
 
-    if value == 1:
-        return
+    file_name, new = check
+    ext = new.split('.')[-1].lower()
 
-    new_ = download_file(file_id)
+    if is_video(ext, new):
+        w, h = get_size(new)
 
-    if new_ == None:
-        reply(update, 'Il file è troppo pesante.')
-        return
-
-    ext = new_.split('.')[-1].lower()
-
-    if ext in exts and 'video' in run(f'ffprobe -loglevel error -show_entries stream=codec_type -of csv=p=0 "{new_}"',
-            shell = True, stdout = -1).stdout.decode():
-
-        w, h = run(f'ffprobe -v error -select_streams v -show_entries stream=width,height -of csv=p=0:s=x "{new_}"',
-            shell = True, stdout = -1).stdout.decode().split('x')
-
-        
-        run(F'ffmpeg -i "{new_}" -af asetrate=44100*{value / error},aresample=44100 -filter:v "setpts=PTS/{value}" "{file_name}"', shell = True)
+        ffmpeg(new, file_name, f'-af asetrate=44100*{real} -filter:v "setpts=PTS/{real}"')
 
         with open(file_name, 'rb') as f:
-            try:
-                update.message.reply_video(f, file_name, reply_to_message_id = msg_id, width = w, height = h)
-            except:
-                reply(update, 'Il file è troppo pesante.')
+            update.message.reply_video(f, file_name, reply_to_message_id = msg_id, width = w, height = h)
     else:
-        if new_.split('.')[-1] == 'oga':
-            run(F'ffmpeg -i "{new_}" -c:a libopus -af asetrate=44100*{value / error},aresample=44100 "{file_name}"', shell = True)
-        else:
-            run(F'ffmpeg -i "{new_}" -af asetrate=44100*{value / error},aresample=44100 "{file_name}"', shell = True)
+        ffmpeg(new, file_name, f'-af asetrate=44100*{real}')
 
         with open(file_name, 'rb') as f:
-            try:
-                update.message.reply_audio(f, file_name, reply_to_message_id = msg_id)
-            except:
-                reply(update, 'Il file è troppo pesante.')
+            update.message.reply_audio(f, file_name, reply_to_message_id = msg_id)
 
-    try:
-        remove(new_)
-        remove(file_name)
-    except:
-        pass
+    remove(new)
+    remove(file_name)
+
+
+
+def loop_audio_video(update, ctx):
+    value = int(get_value(ctx, 10, 2, 2)) - 1
+
+    msg_id, file_name, file_id = get_reply(update)
+
+    if not (check := check_file(update, file_name, file_id, 50 / (value + 1) - 0.05)):
+        return
+
+    file_name, new = check
+    ext = new.split('.')[-1].lower()
+
+    ffmpeg(new, file_name, '', '', f'-stream_loop {value}')
+
+    with open(file_name, 'rb') as f:
+        if is_video(ext, new):
+            w, h = get_size(new)
+            update.message.reply_video(f, file_name, reply_to_message_id = msg_id, width = w, height = h)
+        else:
+            update.message.reply_audio(f, file_name, reply_to_message_id = msg_id)
+
+    remove(new)
+    remove(file_name)

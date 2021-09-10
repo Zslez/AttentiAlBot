@@ -37,7 +37,9 @@ def send(chat, msg, markdown = 2, preview = False):
         if not preview:
             u += '&disable_web_page_preview=True'
 
-        if not get(u).json()['ok']:
+        msg = get(u).json()
+
+        if not msg['ok']:
             raise ZeroDivisionError
 
         return msg
@@ -121,11 +123,14 @@ def pin(chat_id, msg_id):
 
 
 
-def download_file(file_id):
-    req = get(url + f'getFile?file_id={file_id}').json()['result']
+def download_file(file_id, mb = 20):
+    if not (req := get(url + f'getFile?file_id={file_id}').json())['ok']:
+        return
 
-    if req['file_size'] > 52428800:
-        return None
+    req = req['result']
+
+    if req['file_size'] > 1048576 * mb:
+        return
 
     req = req['file_path']
 

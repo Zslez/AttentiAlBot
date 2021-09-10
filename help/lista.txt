@@ -3,7 +3,7 @@
 *PER SCUOLA*
 ‣ /class \(alias /cl\)
 ‣ /compiti \(alias /c\)
-‣ /news
+‣ /news \(alias /n\)
 ‣ /promemoria \(alias /p\)
 ‣ /sacrifica
 
@@ -12,6 +12,7 @@
 ‣ /cut
 ‣ /earrape \(alias /e\)
 ‣ /image \(alias /i\)
+‣ /loop \(alias /l\)
 ‣ /reverse \(alias /r\)
 ‣ /speed \(alias /s\)
 ‣ /speedpitch \(alias /sp\)

@@ -1,0 +1,6 @@
+*/loop* _\[numero\]_
+
+Restituisce l'audio o il video dato in input, ripetuto il _numero_ specificato di volte
+
+*NOTA:*
+‣ il _numero_ minimo è *2* mentre il massimo è *10*

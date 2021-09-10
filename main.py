@@ -1,10 +1,9 @@
-from telegram.ext                   import Updater, CommandHandler, MessageHandler, Filters, JobQueue, CallbackQueryHandler
+from telegram.ext                   import Updater, CommandHandler, MessageHandler, Filters
 from telegram                       import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext                   import JobQueue, CallbackQueryHandler
 from datetime                       import time, timedelta
 from logging                        import getLogger
 from random                         import choice
-
-from telegram.update                import Update
 
 import globals
 
@@ -42,16 +41,10 @@ with open('token.json') as f:
 privata = 781455352                 # il mio ID Telegram
 gruppo = -1001261320605             # l'ID del gruppo
 news_channel = -1001568629792       # l'ID del canale delle news
-attentiallog = -1001533648966       # l'ID del canale delle notifiche utili a me per risolvere gli errori
+attentiallog = -1001533648966       # l'ID del canale delle notifiche che uso per risolvere gli errori
 
 users = [str(privata)] if globals.name else os.environ['USERS'].split(',')
 intusers = [int(i) for i in users]
-
-
-# non dire queste parole
-
-with open('json/bad_words_list.json', encoding = 'utf-8') as f:
-    bad_words = json.load(f)
 
 
 # lista dei comandi del Bot
@@ -69,6 +62,7 @@ comandi = [
         'cut',
         'earrape',
         'image',
+        'loop',
         'reverse',
         'speed',
         'speedpitch',
@@ -116,8 +110,9 @@ Understandable, tuttavia ti invito a dare un'occhiata al codice del Bot \
 Non c'è nulla di losco, anche perché vengono usate le mie credenziali per accedere ad ARGO\.
 
 *NOTA*, però, che per sapere se ci sono errori e per capire come correggerli, \
-[inoltro in un canale privato il testo di tutti i comandi usati](https://github.com/Zslez/AttentiAlBot/blob/master/main.py#L193), \
-quindi, *NON* inviare mai dati sensibili al Bot quando usi un comando, anche perché non è mai necessario farlo\.
+[inoltro in un canale privato il testo di tutti i comandi usati]\
+(https://github.com/Zslez/AttentiAlBot/blob/master/main.py#L192), quindi, \
+*NON* inviare mai dati sensibili al Bot quando usi un comando, anche perché non è mai necessario farlo\.
 Di conseguenza, non mi prendo alcuna responsabilità per questo tipo di _incidenti_\.''', markdown = 2)
 
 
@@ -144,16 +139,20 @@ def help_keyboard():
             InlineKeyboardButton('formati data', callback_data = 'help_data')
         ],
         [InlineKeyboardButton('COMANDI SCUOLA', callback_data = 'null')]
-    ] + [[InlineKeyboardButton(i, callback_data = f'help_{i}') for i in j] for j in chunks(comandi[0], 3)] + [
+    ] + [
+        [InlineKeyboardButton(i, callback_data = f'help_{i}') for i in j] for j in chunks(comandi[0], 3)
+    ] + [
         [InlineKeyboardButton('ALTRI COMANDI', callback_data = 'null')]
-    ] + [[InlineKeyboardButton(i, callback_data = f'help_{i}') for i in j] for j in chunks(comandi[1], 3)] + [
+    ] + [
+        [InlineKeyboardButton(i, callback_data = f'help_{i}') for i in j] for j in chunks(comandi[1], 3)
+    ] + [
         [InlineKeyboardButton('🗑️', callback_data = 'delete')]
     ]
 
 
 # handler che viene chiamato quando vengono premuti i buttons del comando help
 
-def help_callback(update: Update, ctx):
+def help_callback(update, ctx):
     data = update.callback_query['data'].split('_')[-1]
     msg = update.callback_query.message
 
@@ -195,6 +194,9 @@ def deco(func):
         uid = update.message.from_user.id
         uname = update.message.from_user.first_name
 
+
+        # se chi usa il comando non sono io
+
         if uid != privata:
             send(
                 attentiallog,
@@ -203,6 +205,9 @@ def deco(func):
                 f'\nREGISTRATO: {uid in intusers}' + \
                 '\nCOMANDO:\n' + update.message.text
             )
+
+
+        # se chi usa il comando non è nella lista di chi può usare il Bot
 
         if uid not in intusers and update.message.chat_id != gruppo:
             send(uid, 'Invia prima un messaggio nel gruppo, così so che fai parte della classe\.')
@@ -227,7 +232,13 @@ def update_and_restart(update, ctx = None):
             ['attenti-al-bot-2', 'attenti-al-bot'][bool(hname.replace('attenti-al-bot', ''))]
         ).config().update({'USERS': ','.join(users), 'LNU': globals.lnu, 'MAXNEWS': globals.max_news})
 
-        heroku3.from_key(hkey).app(hname).config().update({'USERS': ','.join(users), 'LNU': globals.lnu, 'MAXNEWS': globals.max_news})
+        heroku3.from_key(hkey).app(hname).config().update(
+            {
+                'USERS': ','.join(users),
+                'LNU': globals.lnu,
+                'MAXNEWS': globals.max_news
+            }
+        )
 
         send(attentiallog, 'Updated config variables\.\nRestarting\.\.\.')
 
@@ -235,7 +246,7 @@ def update_and_restart(update, ctx = None):
 
 # COMMANDS
 
-def bad_word_check(update: Update, ctx):
+def bad_word_check(update, ctx):
     message = update.effective_message
     text = message.text.lower()
     txtspl = text.split()
@@ -245,11 +256,15 @@ def bad_word_check(update: Update, ctx):
     except:
         return
 
+
+    # se chi ha usato il comando non è nella lista di chi può usare il Bot
+    # ma il messaggio è stato inviato sul gruppo, questo viene aggiunto alla lista
+
     if uid not in intusers and message.chat_id == gruppo:
         users.append(str(uid))
         intusers.append(uid)
 
-    if 'sborr' in text or 'cum' in text:
+    if 'sborr' in text or 'cum' in txtspl:
         with open('video/quando_sborri.mp4', 'rb') as f:
             update.message.reply_video(f, 'quando_sborri.mp4',
                 caption = '🎵turuturù turuturù turuturù🎵\n🎵turutututurutu turutu tù!🎵')
@@ -260,24 +275,20 @@ def bad_word_check(update: Update, ctx):
                 caption = '🎵pom pom pom, turuturutturù, turù turù🎵\n🎵turù tuturuturutturù, turù IIIH🎵')
             return
 
-    for i in bad_words:
-        if i in txtspl:
-            update.message.reply_text('Attento, la postale ti osserva.')
-
 
 # handler per gli errori per non far crashare tutto
-# prova ad inviarmi un log dell'errore in privata,
+# prova ad inviarmi un log dell'errore su un canale privato,
 # così posso capire cosa non va
 
 def error(update, ctx):
     try:
         send(
             attentiallog,
-            escape_md(f'*ERROR*\n\n*UPDATE:*\n```\n{json.dumps(update.to_dict(), indent = 4)}```' \
-                f'\n\n*ERROR:*\n{str(ctx.error)}')
+            f'*UPDATE:*\n```\n{escape_md(json.dumps(update.effective_message.to_dict(), indent = 4))}```' \
+                f'\n\n*ERROR:*\n{escape_md(str(ctx.error))}'
         )
     except:
-        send(attentiallog, f'An error occurred!\n\nError: {str(ctx.error)}', 0)
+        send(attentiallog, f'*ERROR:*\n{str(ctx.error)}', 1)
 
     logger.warning('Update "%s" caused error "%s"', update, ctx.error)
 
@@ -298,12 +309,19 @@ def main():
     up = Updater(token, use_context = True)
     dp = up.dispatcher
 
+
+    # COMANDI BASE
+
     dp.add_handler(CommandHandler("help",       deco(help)))
     dp.add_handler(CommandHandler("start",      deco(start)))
+
+
+    # COMANDI PER DIVERTIMENTO
 
     dp.add_handler(CommandHandler("audio",      deco(to_audio)))
     dp.add_handler(CommandHandler("cut",        deco(cut_audio_video)))
     dp.add_handler(CommandHandler("earrape",    deco(earrape)))
+    dp.add_handler(CommandHandler("loop",       deco(loop_audio_video)))
     dp.add_handler(CommandHandler("image",      deco(image)))
     dp.add_handler(CommandHandler("reverse",    deco(reverse_audio_video)))
     dp.add_handler(CommandHandler("speed",      deco(speed_audio_video)))
@@ -328,6 +346,7 @@ def main():
     dp.add_handler(CommandHandler("a",          deco(to_audio)))
     dp.add_handler(CommandHandler("e",          deco(earrape)))
     dp.add_handler(CommandHandler("i",          deco(image)))
+    dp.add_handler(CommandHandler("l",          deco(loop_audio_video)))
     dp.add_handler(CommandHandler("r",          deco(reverse_audio_video)))
     dp.add_handler(CommandHandler("s",          deco(speed_audio_video)))
     dp.add_handler(CommandHandler("sp",         deco(speed_pitch_audio_video)))
@@ -335,6 +354,7 @@ def main():
 
     dp.add_handler(CommandHandler("cl",         deco(get_courses)))
     dp.add_handler(CommandHandler("c",          deco(compiti)))
+    dp.add_handler(CommandHandler("n",          deco(get_news_command)))
     dp.add_handler(CommandHandler("p",          deco(promemoria)))
 
 
@@ -348,13 +368,14 @@ def main():
 
     dp.add_handler(MessageHandler(Filters.text, bad_word_check))
 
-    dp.add_handler(CallbackQueryHandler(help_callback, pattern = '^help_'))
-    dp.add_handler(CallbackQueryHandler(courses_callback_choice, pattern = '^classchoice_'))
-    dp.add_handler(CallbackQueryHandler(courses_callback_ann, pattern = '^classann_'))
-    dp.add_handler(CallbackQueryHandler(courses_callback_work, pattern = '^classwork_'))
+    dp.add_handler(CallbackQueryHandler(courses_callback_choice,    pattern = '^classchoice_'))
+    dp.add_handler(CallbackQueryHandler(courses_callback_work,      pattern = '^classwork_'))
+    dp.add_handler(CallbackQueryHandler(courses_callback_ann,       pattern = '^classann_'))
 
-    dp.add_handler(CallbackQueryHandler(callback_delete, pattern = '^delete'))
-    dp.add_handler(CallbackQueryHandler(callback_null, pattern = '^null'))
+    dp.add_handler(CallbackQueryHandler(callback_delete,            pattern = '^delete'))
+    dp.add_handler(CallbackQueryHandler(callback_null,              pattern = '^null'))
+
+    dp.add_handler(CallbackQueryHandler(help_callback,              pattern = '^help_'))
 
     dp.add_error_handler(error)
 
@@ -384,7 +405,7 @@ def main():
     job_queue5.run_daily(callback = job_deco(promemoria_giornaliero),   days = (0, 1, 2, 3,       6),   time = time(hour = 19, minute =  0))
     job_queue6.run_daily(callback = job_deco(update_and_restart),       days = (0, 1, 2, 3, 4, 5, 6),   time = time(hour =  1, minute =  0))
 
-    job_queue7.run_repeating(callback = job_deco(get_news_job),         first = 10,                     interval = timedelta(minutes  = 30))
+    job_queue7.run_repeating(callback = job_deco(get_news_job),         first = 10,                     interval = timedelta(minutes  = 20))
 
     job_queue1.start()
     job_queue2.start()
@@ -397,7 +418,7 @@ def main():
 
     # PRENDE LE NEWS DALLA BACHECA
 
-    up.job_queue.run_repeating(callback = get_news, interval = timedelta(hours = 3), first = 100)
+    up.job_queue.run_repeating(callback = get_news, interval = timedelta(hours = 1), first = 100)
 
     up.start_polling()
 
