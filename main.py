@@ -85,7 +85,8 @@ def start(update, ctx):
         reply(update, choice(['Weilà', 'Hey', 'Привет', 'ちわっす', '嘿']))
         return
 
-    reply(update, choice(['Weilà', 'Hey', 'Привет', 'ちわっす', '嘿']) + '\n' + '''*Info sul Bot*
+    reply(update, choice(['Weilà', 'Hey', 'Привет', 'ちわっす', '嘿']) + '''
+\n*Info sul Bot*
 
 Con questo Bot è possibile ottenere *compiti*, *promemoria* e *notizie* \
 direttamente su Telegram senza bisogno di credenziali, sia in chat privata che sui gruppi\.
@@ -115,7 +116,7 @@ Understandable, tuttavia ti invito a dare un'occhiata al codice del Bot \
 Non c'è nulla di losco, anche perché vengono usate le mie credenziali per accedere ad ARGO\.
 
 *NOTA*, però, che per sapere se ci sono errori e per capire come correggerli, \
-[inoltro in un canale privato il testo di tutti i comandi usati](https://github.com/Zslez/AttentiAlBot/blob/master/main.py#L195), \
+[inoltro in un canale privato il testo di tutti i comandi usati](https://github.com/Zslez/AttentiAlBot/blob/master/main.py#L193), \
 quindi, *NON* inviare mai dati sensibili al Bot quando usi un comando, anche perché non è mai necessario farlo\.
 Di conseguenza, non mi prendo alcuna responsabilità per questo tipo di _incidenti_\.''', markdown = 2)
 
@@ -163,9 +164,6 @@ def help_callback(update: Update, ctx):
             parse_mode = 'markdownv2'
         )
 
-    elif data == 'delete':
-        msg.delete()
-
     elif data in ('lista', 'data'):
         with open(f'help/{data}.txt', encoding = 'utf-8') as f:
             msg.edit_text(
@@ -177,7 +175,7 @@ def help_callback(update: Update, ctx):
             )
 
     else:
-        for i in comandi:
+        for i in comandi[0] + comandi[1]:
             if data == i:
                 with open(f'help/comandi/{i}.txt', encoding = 'utf-8') as f:
                     msg.edit_text(
@@ -201,10 +199,9 @@ def deco(func):
             send(
                 attentiallog,
                 'USER ID: ' + str(uid) + \
-                f'\nREGISTRATO: {uid in intusers}' + \
                 '\nUSER NAME: ' + uname + \
-                '\n\nCOMANDO:\n' + \
-                update.message.text
+                f'\nREGISTRATO: {uid in intusers}' + \
+                '\nCOMANDO:\n' + update.message.text
             )
 
         if uid not in intusers and update.message.chat_id != gruppo:
@@ -225,21 +222,23 @@ def get_users(update, ctx):
 
 
 def update_and_restart(update, ctx = None):
-    heroku3.from_key(hkey2).app(
-        ['attenti-al-bot-2', 'attenti-al-bot'][bool(hname.replace('attenti-al-bot', ''))]
-    ).config().update({'USERS': ','.join(users), 'LNU': globals.lnu, 'MAXNEWS': globals.max_news})
+    if (ctx != None and update.message.from_user.id == privata) or ctx == None:
+        heroku3.from_key(hkey2).app(
+            ['attenti-al-bot-2', 'attenti-al-bot'][bool(hname.replace('attenti-al-bot', ''))]
+        ).config().update({'USERS': ','.join(users), 'LNU': globals.lnu, 'MAXNEWS': globals.max_news})
 
-    heroku3.from_key(hkey).app(hname).config().update({'USERS': ','.join(users), 'LNU': globals.lnu, 'MAXNEWS': globals.max_news})
+        heroku3.from_key(hkey).app(hname).config().update({'USERS': ','.join(users), 'LNU': globals.lnu, 'MAXNEWS': globals.max_news})
+
+        send(attentiallog, 'Updated config variables\.\nRestarting\.\.\.')
 
 
 
 # COMMANDS
 
 def bad_word_check(update: Update, ctx):
-    if update.message:
-        message = update.message
-    else:
-        message = update.channel_post
+    message = update.effective_message
+    text = message.text.lower()
+    txtspl = text.split()
 
     try:
         uid = message.from_user.id
@@ -250,26 +249,19 @@ def bad_word_check(update: Update, ctx):
         users.append(str(uid))
         intusers.append(uid)
 
-    try:
-        msg = message.text
-    except:
-        msg = update.text
-
-    msg = msg.lower()
-
-    if 'sborr' in msg or 'cum' in msg:
+    if 'sborr' in text or 'cum' in text:
         with open('video/quando_sborri.mp4', 'rb') as f:
             update.message.reply_video(f, 'quando_sborri.mp4',
                 caption = '🎵turuturù turuturù turuturù🎵\n🎵turutututurutu turutu tù!🎵')
             return
-    elif ('interroga' in msg.split() or 'interroga?' in msg) and 'non' not in msg.split():
+    elif ('interroga' in txtspl or 'interroga?' in text) and 'non' not in txtspl and 'nn' not in txtspl:
         with open('video/Directed_by_Robert_Weide.mp4', 'rb') as f:
             update.message.reply_video(f, 'Directed_by_Robert_Weide.mp4',
                 caption = '🎵pom pom pom, turuturutturù, turù turù🎵\n🎵turù tuturuturutturù, turù IIIH🎵')
             return
 
     for i in bad_words:
-        if i in msg.split():
+        if i in txtspl:
             update.message.reply_text('Attento, la postale ti osserva.')
 
 
@@ -281,9 +273,8 @@ def error(update, ctx):
     try:
         send(
             attentiallog,
-            f'An error occurred!\n\n\nUpdate:\n```\n{json.dumps(update.to_dict(), indent = 4)}```' \
-                f'\n\nError: {str(ctx.error)}',
-            1
+            escape_md(f'*ERROR*\n\n*UPDATE:*\n```\n{json.dumps(update.to_dict(), indent = 4)}```' \
+                f'\n\n*ERROR:*\n{str(ctx.error)}')
         )
     except:
         send(attentiallog, f'An error occurred!\n\nError: {str(ctx.error)}', 0)
@@ -296,7 +287,6 @@ def job_deco(func):
     def new_func(ctx):
         send(attentiallog, f'Executing job `{func.__name__}`...', 1)
         func(ctx)
-        send(attentiallog, f'Success\.')
 
     return new_func
 

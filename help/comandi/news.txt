@@ -1,6 +1,6 @@
 */news* _\[numero \(opzionale\)\]_
 
-Restituisce l'n-esimo post sul [sito della scuola](https://www.liceopeanomonterotondo.edu.it/)
+Restituisce l'n\-esimo post sul [sito della scuola](https://www.liceopeanomonterotondo.edu.it/)
 
 *NOTE:*
 ‣ se scritto senza nient'altro dopo viene preso in automatico *il post più recente*

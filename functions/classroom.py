@@ -166,6 +166,7 @@ def courses_callback_ann(update, ctx):
 
 def get_ann(id, name, num):
     post = globals.service.announcements().list(courseId = id, pageSize = num + 1).execute().get('announcements', [[], []])
+    name = escape_md(name)
 
     end = num == len(post)
 
@@ -175,16 +176,16 @@ def get_ann(id, name, num):
         post = post[-2]
 
     if not post:
-        text = '_Questo corso non ha ancora nessun annuncio\._'
-    else:
-        if num == 1:
-            text = f'[*ULTIMO ANNUNCIO IN "{name.upper()}"*](' + post['alternateLink'] + ')\n\n' + escape_md(post['text'])
-        elif end:
-            text = f'[*PRIMO ANNUNCIO IN "{name.upper()}"*](' + post['alternateLink'] + ')\n\n' + escape_md(post['text'])
-        else:
-            text = f'[*ANNUNCIO IN "{name.upper()}"*](' + post['alternateLink'] + ')\n\n' + escape_md(post['text'])
+        return '_Questo corso non ha ancora nessun annuncio\._', True
 
-        text += '\n'
+    if num == 1:
+        text = f'[*ULTIMO ANNUNCIO IN "{name.upper()}"*](' + post['alternateLink'] + ')\n\n'
+    elif end:
+        text = f'[*PRIMO ANNUNCIO IN "{name.upper()}"*](' + post['alternateLink'] + ')\n\n'
+    else:
+        text = f'[*ANNUNCIO IN "{name.upper()}"*](' + post['alternateLink'] + ')\n\n'
+
+    text += escape_md(post['text']) + '\n'
 
     materials = get_materials(post)
 
@@ -225,7 +226,7 @@ def get_materials(post):
 def get_work(id, num):
     post = globals.service.courseWork().list(courseId = id, pageSize = num + 1).execute().get('courseWork', [[], []])
 
-    end = num >= len(post)
+    end = num == len(post)
 
     if end:
         post = post[-1]
@@ -235,12 +236,12 @@ def get_work(id, num):
     date = ''
 
     if not post:
-        text = '_Questo corso non ha ancora nessun compito\._'
-    else:
-        text = f'[*' + escape_md(post['title']).upper() + '*](' + post['alternateLink'] + ')\n'
+        return '_Questo corso non ha ancora nessun compito\._', True
 
-        if 'description' in post:
-            text += '\n' + escape_md(post['description']) + '\n'
+    text = f'[*' + escape_md(post['title']).upper() + '*](' + post['alternateLink'] + ')\n'
+
+    if 'description' in post:
+        text += '\n' + escape_md(post['description']) + '\n'
 
     materials = get_materials(post)
 
@@ -248,31 +249,16 @@ def get_work(id, num):
         date = '\n*DA CONSEGNARE ENTRO:*\n'
         duedate = post['dueDate']
 
-        if 'year' in duedate:
-            year = str(duedate['year'])
-
-        if 'month' in duedate:
-            month = duedate['month']
-
-        if 'day' in duedate:
-            day = str(duedate['day'])
-
-        month = months[month - 1]
+        year = str(duedate['year']) if 'year' in duedate else ''
+        month = months[duedate['month'] - 1] if 'month' in duedate else ''
+        day = str(duedate['day']) if 'day' in duedate else ''
 
         time = post['dueTime']
         hours = str(time['hours'])
+        mins = ':' + str(time['mins']).rjust(2, '0') if 'mins' in time else ':00'
+        secs = ':' + str(time['secs']).rjust(2, '0') if 'secs' in time else ':00'
 
-        if 'mins' in time:
-            mins = ':' + str(time['mins']).rjust(2, '0')
-        else:
-            mins = ':00'
-
-        if 'secs' in time:
-            secs = ':' + str(time['secs']).rjust(2, '0')
-        else:
-            secs = ':00'
-
-        date += f'{day} {month} {year} alle {hours}{mins}{secs}'
+        date += f'{day} {month} {year} alle {hours}{mins}{secs}'.strip()
 
     return text + materials + date, end
 

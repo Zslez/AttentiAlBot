@@ -173,7 +173,7 @@ def get_news_website(num, last = None):
 
     req = bs(get(url).content, 'html.parser')
 
-    last_news = req.find('div', {'class': f'views-row-{num % 11}'}).find_all('span', {'class': 'field-content'})
+    last_news = req.find('div', {'class': f'views-row-{(num - 1) % 11 + 1}'}).find_all('span', {'class': 'field-content'})
 
     news_title = last_news[0].text
     date, type = last_news[1].text.strip().split(' - ')
@@ -199,7 +199,7 @@ def get_news_website(num, last = None):
 
     if last:
         num = 'NUOVO POST'
-    elif num % 11 == 1:
+    elif num == 1:
         num = 'ULTIMO POST'
     elif num == globals.max_news:
         num = 'PRIMO POST'

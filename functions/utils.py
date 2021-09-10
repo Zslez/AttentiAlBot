@@ -78,6 +78,9 @@ def send_photo(chat, photo, msg = None, markdown = None, preview = False):
     except ZeroDivisionError:
         u = url + f'sendMessage?chat_id={chat}&text={quote_plus(escape_md(msg))}'
 
+        if msg:
+            u += f'&caption={msg}'
+
         if markdown == 2:
             u += '&parse_mode=markdownv2'
         elif markdown == 1:
@@ -92,12 +95,12 @@ def send_photo(chat, photo, msg = None, markdown = None, preview = False):
 
 def reply(update: Update, msg, markdown = 0, preview = False):
     if not markdown:
-        update.message.reply_text(msg.strip(), disable_web_page_preview = not preview)
-    else:
-        if markdown == 1:
-            update.message.reply_markdown(msg.strip(), disable_web_page_preview = not preview)
-        else:
-            update.message.reply_markdown_v2(msg.strip(), disable_web_page_preview = not preview)
+        return update.message.reply_text(msg.strip(), disable_web_page_preview = not preview)
+
+    if markdown == 1:
+        return update.message.reply_markdown(msg.strip(), disable_web_page_preview = not preview)
+
+    return update.message.reply_markdown_v2(msg.strip(), disable_web_page_preview = not preview)
 
 
 
