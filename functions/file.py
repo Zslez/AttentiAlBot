@@ -101,16 +101,20 @@ def ffmpeg(inp, out, cmd_after, oga = '', cmd_before = ''):
 
 
 
-def image(update, ctx):
-    query = ' '.join(ctx.args)
-    q = '_'.join(ctx.args)
+def image(update, ctx, n = 1, query = None):
+    if not query:
+        args = ctx.args
+    else:
+        args = query.split()
 
-    download(query, 1)
+    query = '_'.join(args)
 
-    with open(f'simple_images/{q}/' + listdir(f'simple_images/{q}')[0], 'rb') as f:
+    download(' '.join(args), n)
+
+    with open(f'simple_images/{query}/' + listdir(f'simple_images/{query}')[-1], 'rb') as f:
         ctx.bot.send_photo(ctx._chat_id_and_data[0], photo = f)
 
-    rmtree(f'simple_images/{q}')
+    rmtree(f'simple_images/{query}')
 
 
 
@@ -207,7 +211,7 @@ def to_video(update, ctx):
     else:
         url = ctx.args[0]
 
-    run(f'youtube-dl --max-filesize 40m -o "%(title)s.%(ext)s" -f best {url}')
+    run(f'youtube-dl --max-filesize 49m -o "%(title)s.%(ext)s" -f best {url}')
     name = run(f'youtube-dl --get-filename -o "%(title)s.%(ext)s" {url}').stdout.decode().strip()
     name = name.split('\\')[-1]
 

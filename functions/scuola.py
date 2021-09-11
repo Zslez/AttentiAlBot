@@ -51,8 +51,8 @@ mesi = {
 
 prof = {
     'barone':       'Scienze',
-    'berni':        'Religione',
-    'mendicino':    'Educazione Fisica',
+    'la terza':     'Religione',
+    'spognetta':    'Educazione Fisica',
     'navarra':      'Arte',
     'perini':       'Matematica/Fisica',
     'petterlini':   'Italiano/Latino',
@@ -94,7 +94,10 @@ def get_today(ctx):
     session = argoscuolanext.Session(codice_scuola, uname, passw)
     arg = session.oggi()
     dati = arg['dati']
-    valid = {i['dati']['desMateria']: i['dati']['desArgomento'] for i in dati if i['titolo'] == 'Argomenti lezione'}
+    valid = {
+        i['dati']['desMateria']: i['dati']['desArgomento']
+        for i in dati if i['titolo'] == 'Argomenti lezione'
+    }
 
     if len(valid) == 0:
         msg = 'Non ci sono novità per oggi\.'

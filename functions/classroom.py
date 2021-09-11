@@ -38,9 +38,19 @@ months = [
 
 
 def get_courses(update, ctx):
-    if update.message:
-        keyboard = get_courses_keyboard()
-        update.message.reply_markdown(text = 'Scegli un corso.', reply_markup = InlineKeyboardMarkup(keyboard))
+    keyboard = InlineKeyboardMarkup(get_courses_keyboard())
+
+    if ctx._chat_id_and_data[0] == -1001261320605:
+        return ctx.bot.send_message(
+            update.message.from_user.id,
+            'Scegli un corso.',
+            reply_markup = keyboard
+        )
+
+    return update.message.reply_markdown(
+        text = 'Scegli un corso.',
+        reply_markup = keyboard
+    )
 
 
 
@@ -106,7 +116,7 @@ def courses_callback_ann(update, ctx):
     name2 = '_'.join(name)
 
     if id == 'back':
-        name1 = ' '.join(name1.split()[1:])
+        name1 = ' '.join(name[1:])
 
         keyboard = [
             [InlineKeyboardButton('post', callback_data = 'classann_' + name2)],
@@ -136,7 +146,7 @@ def courses_callback_ann(update, ctx):
         arrows.append(
             InlineKeyboardButton(
                 '⬅️',
-                callback_data = 'classann_page_' + id + '_' + name2 + '_' + str(page - 1)
+                callback_data = f'classann_page_{id}_{name2}_' + str(page - 1)
             )
         )
 
@@ -144,13 +154,13 @@ def courses_callback_ann(update, ctx):
         arrows.append(
             InlineKeyboardButton(
                 '➡️',
-                callback_data = 'classann_page_' + id + '_' + name2 + '_' + str(page + 1)
+                callback_data = f'classann_page_{id}_{name2}_' + str(page + 1)
             )
         )
 
     keyboard = [
         arrows,
-        [InlineKeyboardButton('indietro', callback_data = 'classann_back_' + id + '_' + name2)],
+        [InlineKeyboardButton('indietro', callback_data = f'classann_back_{id}_{name2}')],
         [InlineKeyboardButton('🗑️', callback_data = 'delete')]
     ]
 

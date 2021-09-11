@@ -1,9 +1,9 @@
 from telegram.ext                   import Updater, CommandHandler, MessageHandler, Filters
 from telegram                       import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext                   import JobQueue, CallbackQueryHandler
+from random                         import choice, randint
 from datetime                       import time, timedelta
 from logging                        import getLogger
-from random                         import choice
 
 import globals
 
@@ -294,6 +294,18 @@ def error(update, ctx):
 
 
 
+def dio(update, ctx):
+    with open('stickers/samir.webp', 'rb') as f:
+        update.message.reply_sticker(f)
+        reply(update, '!oznortS oiD'[::-1])
+
+
+
+def napoli(update, ctx):
+    image(update, ctx, randint(1, 8), choice(['napoli meme', 'napoli scimmia']))
+
+
+
 def job_deco(func):
     def new_func(ctx):
         send(attentiallog, f'Executing job `{func.__name__}`...', 1)
@@ -358,6 +370,12 @@ def main():
     dp.add_handler(CommandHandler("p",          deco(promemoria)))
 
 
+    # ALTRI COMANDI
+
+    dp.add_handler(CommandHandler("napoli",     deco(napoli)))
+    dp.add_handler(CommandHandler("stronzodio", deco(dio)))
+
+
     # PER ME
 
     dp.add_handler(CommandHandler("users",      deco(get_users)))
@@ -405,7 +423,7 @@ def main():
     job_queue5.run_daily(callback = job_deco(promemoria_giornaliero),   days = (0, 1, 2, 3,       6),   time = time(hour = 19, minute =  0))
     job_queue6.run_daily(callback = job_deco(update_and_restart),       days = (0, 1, 2, 3, 4, 5, 6),   time = time(hour =  1, minute =  0))
 
-    job_queue7.run_repeating(callback = job_deco(get_news_job),         first = 10,                     interval = timedelta(minutes  = 20))
+    job_queue7.run_repeating(callback = job_deco(get_news_job),         first = 1000,                     interval = timedelta(minutes  = 20))
 
     job_queue1.start()
     job_queue2.start()

@@ -25,7 +25,7 @@ __all__ = [
 ]
 
 
-def send(chat, msg, markdown = 2, preview = False):
+def send(chat, msg, markdown = 2, preview = False, reply_markup = None):
     try:
         u = url + f'sendMessage?chat_id={chat}&text={quote_plus(msg)}'
 

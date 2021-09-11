@@ -8,8 +8,6 @@ from selenium.webdriver.chrome.options                      import Options
 from json                                                   import loads
 from time                                                   import sleep
 from selenium.webdriver.common.by                           import By
-from telegram.ext.callbackcontext import CallbackContext
-from telegram.update import Update
 
 from .utils                                                 import reply, send, escape_md, send_photo
 
@@ -80,8 +78,19 @@ def get_news(ctx):
         wait_5.until(presence((xpath, '//*[@id="bacheca"]/table/tbody/tr[3]/td[2]/div/div[3]'))).click()
         wait_5.until(presence((xpath, '//*[@id="sheet-bacheca:tree:scuola"]/div'))).click()
 
-        table = wait_5.until(presence((xpath, f'//*[@id="panel-messaggiBacheca:form"]/table/tbody/fieldset[{n}]/tr/td[2]/table')))
-        bstable = bs(table.get_attribute('innerHTML'), features = 'html.parser')
+        table = wait_5.until(
+            presence(
+                (
+                    xpath,
+                    f'//*[@id="panel-messaggiBacheca:form"]/table/tbody/fieldset[{n}]/tr/td[2]/table'
+                )
+            )
+        )
+
+        if not table:
+            return
+
+        bstable = bs(table.get_attribute('innerHTML'), 'html.parser')
 
         content = [[j.strip() for j in i.text.split(': ')] for i in bstable.find_all('tr')]
         ogg = ''
@@ -108,8 +117,11 @@ def get_news(ctx):
                 pv = True
 
         c = 0
-        for j in [table.find_element_by_xpath(f'.//tr[{i + 1}]/td[2]/a') for i in range(len(bstable.find_all('tr')))
-            if table.find_element_by_xpath(f'.//tr[{i + 1}]/td[1]').text == 'File:']:
+        for j in [
+                table.find_element_by_xpath(f'.//tr[{i + 1}]/td[2]/a')
+                for i in range(len(bstable.find_all('tr')))
+                if table.find_element_by_xpath(f'.//tr[{i + 1}]/td[1]').text == 'File:'
+            ]:
             j.click()
             sleep(2.5)
 
@@ -123,7 +135,12 @@ def get_news(ctx):
                 "group_guid": 'Bl7pg5tTZil'
             }
 
-            files[list(files)[c]] = post('https://api-ssl.bitly.com/v4/shorten', json = data, headers = header).json()["link"]
+            files[list(files)[c]] = post(
+                'https://api-ssl.bitly.com/v4/shorten',
+                json = data,
+                headers = header
+            ).json()["link"]
+
             c += 1
 
         if len(files) == 0:
