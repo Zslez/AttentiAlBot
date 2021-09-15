@@ -5,16 +5,14 @@ from random                         import choice, randint
 from datetime                       import time, timedelta
 from logging                        import getLogger
 
-import globals
-
-globals.name = __name__ == '__main__'
-
 from functions.classroom            import *
 from functions.heroku               import *
 from functions.scuola               import *
 from functions.utils                import *
 from functions.file                 import *
 from functions.news                 import *
+
+import globals
 
 import heroku3
 import json
@@ -34,6 +32,7 @@ token = os.environ['TOKEN']
 
 globals.lnu = None if globals.name else os.environ['LNU']
 globals.max_news = 70 if globals.name else int(os.environ['MAXNEWS'])
+globals.hnews = None if globals.name else os.environ['NEWS']
 
 with open('token.json') as f:
     gtoken = json.load(f)
@@ -47,9 +46,10 @@ users = [str(privata)] if globals.name else os.environ['USERS'].split(',')
 intusers = [int(i) for i in users]
 
 
-# lista dei comandi del Bot
+# lista dei comandi del Bot dei quali è possibile vedere la spiegazione con /help
 
 comandi = [
+    # comandi per scuola
     [
         'class',
         'compiti',
@@ -57,6 +57,7 @@ comandi = [
         'sacrifica',
         'promemoria'
     ],
+    # altri comandi
     [
         'audio',
         'cut',
@@ -79,7 +80,7 @@ def start(update, ctx):
         reply(update, choice(['Weilà', 'Hey', 'Привет', 'ちわっす', '嘿']))
         return
 
-    reply(update, choice(['Weilà', 'Hey', 'Привет', 'ちわっす', '嘿']) + '''
+    reply(update, choice(['Weilà', 'Hey', 'Привет', 'ちわっす', '嘿']) + f'''
 \n*Info sul Bot*
 
 Con questo Bot è possibile ottenere *compiti*, *promemoria* e *notizie* \
@@ -99,21 +100,31 @@ Usa il comando /help per ricevere la lista dei comandi e informazioni dettagliat
 
 *Nuove funzioni da proporre?*
 
-Scrivi a *[Cristiano](https://t.me/cristiano_san)* \(scrivigli anche se non hai roba da proporre, \
-sono piuttosto sicuro non gli dispiaccia\)\.
+*[Scrivimi](https://t.me/cristiano_san)* \(puoi scrivermi anche se non hai da proporre nulla 😔\)\.
 
 
-*Non ti fidi di [Cristiano](https://t.me/cristiano_san)?*
+*Non sei della mia classe e vuoi usare il Bot?*
 
-Understandable, tuttavia ti invito a dare un'occhiata al codice del Bot \
-[qui](https://github.com/Zslez/AttentiAlBot) su GitHub, completo e commentato\.
-Non c'è nulla di losco, anche perché vengono usate le mie credenziali per accedere ad ARGO\.
+*[Scrivimi](https://t.me/cristiano_san)* dicendo chi sei e perché ti serve\.
 
-*NOTA*, però, che per sapere se ci sono errori e per capire come correggerli, \
+
+*Non ti fidi di [me](https://t.me/cristiano_san)?*
+
+Understandable, tuttavia [qui](https://github.com/Zslez/AttentiAlBot) su GitHub c'è il codice del Bot, \
+completo e abbastanza commentato\. Se ti servono spiegazioni su come funziona chiedi pure\.
+In ogni caso, le mie credenziali usate per accedere ad ARGO sono le mie \
+e non servono dati per usare i comandi\.
+
+
+*ATTENZIONE*
+per sapere se ci sono errori e per capire come correggerli, \
 [inoltro in un canale privato il testo di tutti i comandi usati]\
-(https://github.com/Zslez/AttentiAlBot/blob/master/main.py#L192), quindi, \
-*NON* inviare mai dati sensibili al Bot quando usi un comando, anche perché non è mai necessario farlo\.
-Di conseguenza, non mi prendo alcuna responsabilità per questo tipo di _incidenti_\.''', markdown = 2)
+(https://github.com/Zslez/AttentiAlBot/blob/master/main.py#L{globals.lineno}), quindi, \
+*NON* inviare mai dati sensibili al Bot quando usi un comando, anche perché *non è mai necessario farlo*\.
+Di conseguenza, non mi prendo alcuna responsabilità per questo tipo di _incidenti_\.
+Dato che ancora ogni tanto escono fuori cose da sistemare, \
+per ora rimane così, poi credo toglierò questa cosa\.
+''', markdown = 2)
 
 
 # funzione help con i vari buttons per le info
@@ -191,8 +202,9 @@ def help_callback(update, ctx):
 
 def deco(func):
     def new_func(update, ctx):
-        uid = update.message.from_user.id
-        uname = update.message.from_user.first_name
+        message = update.message
+        uid = message.from_user.id
+        uname = message.from_user.first_name
 
 
         # se chi usa il comando non sono io
@@ -203,15 +215,19 @@ def deco(func):
                 'USER ID: ' + str(uid) + \
                 '\nUSER NAME: ' + uname + \
                 f'\nREGISTRATO: {uid in intusers}' + \
-                '\nCOMANDO:\n' + update.message.text
+                '\nCOMANDO:\n' + message.text
             )
 
 
         # se chi usa il comando non è nella lista di chi può usare il Bot
 
-        if uid not in intusers and update.message.chat_id != gruppo:
-            send(uid, 'Invia prima un messaggio nel gruppo, così so che fai parte della classe\.')
-            return
+        if uid not in intusers:
+            if message.chat_id != gruppo:   # se scrive in privata
+                send(uid, 'Invia prima un messaggio nel gruppo, così so che fai parte della classe\.')
+                return
+            else:                           # se scrive sul gruppo
+                users.append(str(uid))
+                intusers.append(uid)
 
         func(update, ctx)
 
@@ -221,32 +237,53 @@ def deco(func):
 
 def get_users(update, ctx):
     if update.message.from_user.id == privata:
-        users_lst = [ctx.bot.get_chat_member(chat_id = gruppo, user_id = i) for i in intusers]
-        send(privata, '\n'.join([str(i.user.id) + ' ' + i.user.first_name for i in users_lst]))
+        users_lst = [ctx.bot.get_chat_member(chat_id = gruppo, user_id = i).user for i in intusers]
+        send(
+            privata,
+            '\n'.join(
+                ['```' + str(i.id).ljust(15) + ' ' + i.first_name + '```' for i in users_lst]
+            )
+        )
+
+
+
+def get_today_again(update, ctx):
+    get_today(1, update)
 
 
 
 def update_and_restart(update, ctx = None):
     if (ctx != None and update.message.from_user.id == privata) or ctx == None:
+        for i in globals.messages:
+            delete(attentiallog, i)
+
         heroku3.from_key(hkey2).app(
             ['attenti-al-bot-2', 'attenti-al-bot'][bool(hname.replace('attenti-al-bot', ''))]
-        ).config().update({'USERS': ','.join(users), 'LNU': globals.lnu, 'MAXNEWS': globals.max_news})
+        ).config().update(
+            {
+                'USERS': ','.join(users),
+                'LNU': globals.lnu,
+                'MAXNEWS': globals.max_news,
+                'NEWS': globals.hnews
+            }
+        )
 
         heroku3.from_key(hkey).app(hname).config().update(
             {
                 'USERS': ','.join(users),
                 'LNU': globals.lnu,
-                'MAXNEWS': globals.max_news
+                'MAXNEWS': globals.max_news,
+                'NEWS': globals.hnews
             }
         )
 
-        send(attentiallog, 'Updated config variables\.\nRestarting\.\.\.')
+        send(attentiallog, 'Updated config variables\. Restarting\.\.\.')
 
 
 
 # COMMANDS
 
-def bad_word_check(update, ctx):
+def word_check(update, ctx):
     message = update.effective_message
     text = message.text.lower()
     txtspl = text.split()
@@ -263,6 +300,9 @@ def bad_word_check(update, ctx):
     if uid not in intusers and message.chat_id == gruppo:
         users.append(str(uid))
         intusers.append(uid)
+
+
+    # goliardia
 
     if 'sborr' in text or 'cum' in txtspl:
         with open('video/quando_sborri.mp4', 'rb') as f:
@@ -294,6 +334,9 @@ def error(update, ctx):
 
 
 
+
+# altra goliardia 😳
+
 def dio(update, ctx):
     with open('stickers/samir.webp', 'rb') as f:
         update.message.reply_sticker(f)
@@ -303,15 +346,6 @@ def dio(update, ctx):
 
 def napoli(update, ctx):
     image(update, ctx, randint(1, 8), choice(['napoli meme', 'napoli scimmia']))
-
-
-
-def job_deco(func):
-    def new_func(ctx):
-        send(attentiallog, f'Executing job `{func.__name__}`...', 1)
-        func(ctx)
-
-    return new_func
 
 
 
@@ -325,7 +359,7 @@ def main():
     # COMANDI BASE
 
     dp.add_handler(CommandHandler("help",       deco(help)))
-    dp.add_handler(CommandHandler("start",      deco(start)))
+    dp.add_handler(CommandHandler("start",      start))
 
 
     # COMANDI PER DIVERTIMENTO
@@ -343,12 +377,12 @@ def main():
 
     # SCUOLA
 
-    dp.add_handler(CommandHandler("compiti",    deco(compiti)))
-    dp.add_handler(CommandHandler("sacrifica",  deco(sacrifica)))
-    dp.add_handler(CommandHandler("promemoria", deco(promemoria)))
     dp.add_handler(CommandHandler("class",      deco(get_courses)))
-
+    dp.add_handler(CommandHandler("compiti",    deco(compiti)))
     dp.add_handler(CommandHandler("news",       deco(get_news_command)))
+    dp.add_handler(CommandHandler("promemoria", deco(promemoria)))
+    dp.add_handler(CommandHandler("sacrifica",  deco(sacrifica)))
+    dp.add_handler(CommandHandler("today",      deco(get_today_again)))
 
 
     # ALIAS
@@ -378,13 +412,13 @@ def main():
 
     # PER ME
 
-    dp.add_handler(CommandHandler("users",      deco(get_users)))
-    dp.add_handler(CommandHandler("restart",    deco(update_and_restart)))
+    dp.add_handler(CommandHandler("users",      get_users))
+    dp.add_handler(CommandHandler("restart",    update_and_restart))
 
 
     # ALTRI HANDLER
 
-    dp.add_handler(MessageHandler(Filters.text, bad_word_check))
+    dp.add_handler(MessageHandler(Filters.text, word_check))
 
     dp.add_handler(CallbackQueryHandler(courses_callback_choice,    pattern = '^classchoice_'))
     dp.add_handler(CallbackQueryHandler(courses_callback_work,      pattern = '^classwork_'))
@@ -400,43 +434,43 @@ def main():
 
     # JOB QUEUES
 
-    job_queue1 = JobQueue()
-    job_queue2 = JobQueue()
-    job_queue3 = JobQueue()
-    job_queue4 = JobQueue()
-    job_queue5 = JobQueue()
-    job_queue6 = JobQueue()
-    job_queue7 = JobQueue()
+    job1 = JobQueue()
+    job2 = JobQueue()
+    job3 = JobQueue()
+    job4 = JobQueue()
+    job5 = JobQueue()
+    job6 = JobQueue()
+    job7 = JobQueue()
 
-    job_queue1.set_dispatcher(dp)
-    job_queue2.set_dispatcher(dp)
-    job_queue3.set_dispatcher(dp)
-    job_queue4.set_dispatcher(dp)
-    job_queue5.set_dispatcher(dp)
-    job_queue6.set_dispatcher(dp)
-    job_queue7.set_dispatcher(dp)
+    job1.set_dispatcher(dp)
+    job2.set_dispatcher(dp)
+    job3.set_dispatcher(dp)
+    job4.set_dispatcher(dp)
+    job5.set_dispatcher(dp)
+    job6.set_dispatcher(dp)
+    job7.set_dispatcher(dp)
 
-    job_queue1.run_daily(callback = job_deco(change_heroku),            days = (0, 1, 2, 3, 4, 5, 6),   time = time(hour =  2, minute =  0))
-    job_queue2.run_daily(callback = job_deco(verifica),                 days = (0, 1, 2, 3, 4      ),   time = time(hour = 12, minute =  0))
-    job_queue3.run_daily(callback = job_deco(get_today),                days = (0, 1, 2, 3, 4      ),   time = time(hour = 12, minute = 30))
-    job_queue4.run_daily(callback = job_deco(promemoria_giornaliero),   days = (0, 1, 2, 3,       6),   time = time(hour = 13, minute =  0))
-    job_queue5.run_daily(callback = job_deco(promemoria_giornaliero),   days = (0, 1, 2, 3,       6),   time = time(hour = 19, minute =  0))
-    job_queue6.run_daily(callback = job_deco(update_and_restart),       days = (0, 1, 2, 3, 4, 5, 6),   time = time(hour =  1, minute =  0))
+    job1.run_daily(callback = update_and_restart,     days = (0, 1, 2, 3, 4, 5, 6), time = time(hour =  1, minute =  0))
+    job2.run_daily(callback = change_heroku,          days = (0, 1, 2, 3, 4, 5, 6), time = time(hour =  2, minute =  0))
+    job3.run_daily(callback = verifica,               days = (0, 1, 2, 3, 4      ), time = time(hour = 11, minute = 45))
+    job4.run_daily(callback = get_today,              days = (0, 1, 2, 3, 4      ), time = time(hour = 12, minute =  0))
+    job5.run_daily(callback = promemoria_giornaliero, days = (0, 1, 2, 3,       6), time = time(hour = 12, minute = 15))
+    job6.run_daily(callback = promemoria_giornaliero, days = (0, 1, 2, 3,       6), time = time(hour = 19, minute =  0))
 
-    job_queue7.run_repeating(callback = job_deco(get_news_job),         first = 1000,                     interval = timedelta(minutes  = 20))
+    job7.run_repeating(callback = get_news_job,       first = 10,                   interval = timedelta(minutes  = 15))
 
-    job_queue1.start()
-    job_queue2.start()
-    job_queue3.start()
-    job_queue4.start()
-    job_queue5.start()
-    job_queue6.start()
-    job_queue7.start()
+    job1.start()
+    job2.start()
+    job3.start()
+    job4.start()
+    job5.start()
+    job6.start()
+    job7.start()
 
 
     # PRENDE LE NEWS DALLA BACHECA
 
-    up.job_queue.run_repeating(callback = get_news, interval = timedelta(hours = 1), first = 100)
+    up.job_queue.run_repeating(callback = get_news, interval = timedelta(minutes = 20), first = 100)
 
     up.start_polling()
 

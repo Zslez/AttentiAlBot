@@ -3,6 +3,7 @@ from telegram.update    import Update
 from requests           import get
 
 import os
+import globals
 
 
 token = os.environ['TOKEN']
@@ -25,73 +26,52 @@ __all__ = [
 ]
 
 
-def send(chat, msg, markdown = 2, preview = False, reply_markup = None):
-    try:
-        u = url + f'sendMessage?chat_id={chat}&text={quote_plus(msg)}'
+def send(chat, msg, markdown = 2, preview = False):
+    u = url + f'sendMessage?chat_id={chat}&text={quote_plus(msg)}'
 
-        if markdown == 2:
-            u += '&parse_mode=markdownv2'
-        elif markdown == 1:
-            u += '&parse_mode=markdown'
+    if markdown == 2:
+        u += '&parse_mode=markdownv2'
+    elif markdown == 1:
+        u += '&parse_mode=markdown'
 
-        if not preview:
-            u += '&disable_web_page_preview=True'
+    if not preview:
+        u += '&disable_web_page_preview=True'
 
-        msg = get(u).json()
+    res = get(u).json()
 
-        if not msg['ok']:
-            raise ZeroDivisionError
+    if not res['ok']:
+        raise ZeroDivisionError
 
-        return msg
-    except ZeroDivisionError:
-        u = url + f'sendMessage?chat_id={chat}&text={quote_plus(escape_md(msg))}'
+    if chat == -1001533648966:
+        globals.messages.append(res['result']['message_id'])
 
-        if markdown == 2:
-            u += '&parse_mode=markdownv2'
-        elif markdown == 1:
-            u += '&parse_mode=markdown'
-
-        if not preview:
-            u += '&disable_web_page_preview=True'
-
-        return get(u).json()
+    return res
 
 
 
 def send_photo(chat, photo, msg = None, markdown = None, preview = False):
-    try:
-        u = url + f'sendPhoto?chat_id={chat}&photo={photo}'
+    u = url + f'sendPhoto?chat_id={chat}&photo={photo}'
 
-        if msg:
-            u += f'&caption={msg}'
+    if msg:
+        u += f'&caption={msg}'
 
-        if markdown == 2:
-            u += '&parse_mode=markdownv2'
-        elif markdown == 1:
-            u += '&parse_mode=markdown'
+    if markdown == 2:
+        u += '&parse_mode=markdownv2'
+    elif markdown == 1:
+        u += '&parse_mode=markdown'
 
-        if not preview:
-            u += '&disable_web_page_preview=True'
+    if not preview:
+        u += '&disable_web_page_preview=True'
+    
+    res = get(u).json()
 
-        if not get(u).json()['ok']:
-            raise ZeroDivisionError
+    if not res['ok']:
+        raise ZeroDivisionError
 
-        return msg
-    except ZeroDivisionError:
-        u = url + f'sendMessage?chat_id={chat}&text={quote_plus(escape_md(msg))}'
+    if chat == -1001533648966:
+        globals.messages.append(res['result']['message_id'])
 
-        if msg:
-            u += f'&caption={msg}'
-
-        if markdown == 2:
-            u += '&parse_mode=markdownv2'
-        elif markdown == 1:
-            u += '&parse_mode=markdown'
-
-        if not preview:
-            u += '&disable_web_page_preview=True'
-
-        return get(u).json()
+    return res
 
 
 

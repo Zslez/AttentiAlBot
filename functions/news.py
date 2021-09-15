@@ -20,11 +20,11 @@ import globals
 
 # VARIABLES
 
-hkey     = None if globals.name else os.environ['HKEY']
-hname    = None if globals.name else os.environ['HNAME']
+hkey    = None if globals.name else os.environ['HKEY']
+hname   = None if globals.name else os.environ['HNAME']
 
-uname    = None if globals.name else os.environ['USERNAME']
-passw    = None if globals.name else os.environ['PASSWORD']
+uname   = None if globals.name else os.environ['USERNAME']
+passw   = None if globals.name else os.environ['PASSWORD']
 
 news_channel = -1001568629792
 
@@ -59,7 +59,6 @@ __all__ = [
 
 def get_news(ctx):
     n = 1
-    hnews = os.environ['NEWS']
 
     with webdriver.Chrome(options = options, desired_capabilities = capabilities) as dri:
         dri.get('https://www.portaleargo.it/')
@@ -106,8 +105,7 @@ def get_news(ctx):
                 msg = i[1] + '\n\n'
                 save = ''.join([x[0] for x in msg.split()])
 
-                if save == hnews:
-                    send(-1001533648966, f'Il Messaggio è lo stesso:\n{msg}')
+                if save == globals.hnews:
                     return
             elif i[0] == 'File':
                 files[i[1]] = None
@@ -117,6 +115,7 @@ def get_news(ctx):
                 pv = True
 
         c = 0
+
         for j in [
                 table.find_element_by_xpath(f'.//tr[{i + 1}]/td[2]/a')
                 for i in range(len(bstable.find_all('tr')))
@@ -160,9 +159,9 @@ def get_news(ctx):
 
         res = ogg + escape_md(msg) + files + escape_md(urls) + escape_md(pv)
 
-    send(news_channel, res)
+    globals.hnews = save
 
-    heroku3.from_key(hkey).app(hname).config()['NEWS'] = save
+    send(news_channel, res)
 
 
 
@@ -282,10 +281,7 @@ def get_news_website(num, last = None):
 
 
 def get_news_command(update, ctx):
-    num = int(ctx.args[0]) if len(ctx.args) > 0 else 1
-
-    if num > globals.max_news:
-        num = globals.max_news
+    num = min(int(ctx.args[0]), globals.max_news) if len(ctx.args) > 0 else 1
 
     text, images = get_news_website(num)
 

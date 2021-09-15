@@ -6,7 +6,7 @@ from googleapiclient.discovery      import build
 import os
 
 
-name = False
+name = True
 creds = None
 
 
@@ -39,7 +39,11 @@ if not creds or not creds.valid:
 service = build('classroom', 'v1', credentials = creds).courses()
 courses = service.list(pageSize = 15, courseStates = ['ACTIVE']).execute()['courses']
 
+messages = []
 
+hnews = None
 
 lnu = None
 max_news = 70
+
+lineno = 0

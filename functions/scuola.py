@@ -90,10 +90,11 @@ def format_data(ctx):
 
 
 
-def get_today(ctx):
+def get_today(ctx, update = False):
     session = argoscuolanext.Session(codice_scuola, uname, passw)
     arg = session.oggi()
     dati = arg['dati']
+
     valid = {
         i['dati']['desMateria']: i['dati']['desArgomento']
         for i in dati if i['titolo'] == 'Argomenti lezione'
@@ -106,15 +107,17 @@ def get_today(ctx):
         c = 1
 
         for k, v in valid.items():
-            msg += f'{c}\. *' + k + '*\n\n' + v + '\n\n\n'
+            msg += f'{c}\. *{escape_md(k)}*\n\n{escape_md(v)}\n\n\n'
             c += 1
 
-    del session
 
-    msg = send(gruppo, msg.strip())['result']
-    chat = msg['chat']['id']
-    msg = msg['message_id']
-    pin(chat, msg)
+    if not update:
+        msg = send(gruppo, msg.strip())['result']
+        chat = msg['chat']['id']
+        msg = msg['message_id']
+        pin(chat, msg)
+    else:
+        reply(update, msg.strip(), markdown = 2)
 
 
 
@@ -134,11 +137,11 @@ def compiti(update, ctx):
         c = 1
 
         for i in result:
-            msg += f'{c}\. *' + escape_md(i[0]) + '*\n\n' + escape_md(i[1]) + '\n\n\n'
+            msg += f'{c}\. *{escape_md(i[0])}*\n\n{escape_md(i[1])}\n\n\n'
             c += 1
     else:
         msg = f'Non ci sono compiti per il {int(g)} {m[0] + m[1:].lower()}\.'
-    del session
+
     reply(update, msg, markdown = 2)
 
 
@@ -166,9 +169,11 @@ def promemoria_giornaliero(ctx):
         return
 
     if text[0] not in ('0', '1'):
-        send(gruppo, 'Vi ricordo nuovamente gli impegni segnati per domani.\n\n' + text)
+        send(gruppo, 'Vi ricordo nuovamente gli impegni segnati per domani\.\n\n' + text)
+
         with open('promemoria.txt', 'w') as f:
             f.write('02')
+
         return
 
     data = (datetime.today() + timedelta(days = 1)).strftime('%Y-%m-%d')
@@ -182,11 +187,13 @@ def promemoria_giornaliero(ctx):
     for i in prom:
         if i['datGiorno'] == data:
             c += 1
-            msg += f'{c}. *' + i['desMittente'] + '*\n\n' + i['desAnnotazioni'] + '\n\n\n'
+            msg += f'{c}. *' + escape_md(i['desMittente']) + '*\n\n' + escape_md(i['desAnnotazioni'])
+            msg += '\n\n\n'
 
     if not c:
         with open('promemoria.txt', 'w') as f:
             f.write('01')
+
         return
 
     with open('promemoria.txt', 'w') as f:
@@ -209,32 +216,32 @@ def promemoria(update, ctx):
     for i in prom:
         if i['datGiorno'] == data:
             c += 1
-            msg += f'{c}\. *' + escape_md(i['desMittente']) + '*\n\n' + escape_md(i['desAnnotazioni']) + '\n\n\n'
+            msg += f'{c}\. *' + escape_md(i['desMittente']) + '*\n\n' + escape_md(i['desAnnotazioni'])
+            msg += '\n\n\n'
 
     if not c:
         msg = f'Non ci sono promemoria per il {int(g)} {m.lower()}\.'
 
-    del session
     reply(update, msg, markdown = 2)
 
 
 
 
 def sacrifica(update, ctx):
-    with open('json/classe.json', encoding = 'utf-8') as f:
+    with open('classe.json', encoding = 'utf-8') as f:
         classe = json.load(f)
 
     if len(ctx.args) == 0:
-        n = 2
+        num = 2
     else:
-        n = int(ctx.args[0])
+        num = min(int(ctx.args[0]), len(classe))
 
     res = ''
 
-    for _ in range(n):
-        c = random.choices(list(classe.keys()), list(classe.values()), k = 1)[0]
-        res += c + '\n'
-        del classe[c]
+    for _ in range(num):
+        choice = random.choices(list(classe.keys()), list(classe.values()), k = 1)[0]
+        res += choice + '\n'
+        del classe[choice]
 
     reply(update, res)
 

@@ -366,12 +366,12 @@ def speed_pitch_audio_video(update, ctx):
     if is_video(ext, new):
         w, h = get_size(new)
 
-        ffmpeg(new, file_name, f'-af asetrate=44100*{real} -filter:v "setpts=PTS/{real}"')
+        ffmpeg(new, file_name, f'-af asetrate=44100*{real},aresample=44100 -filter:v "setpts=PTS/{real}"')
 
         with open(file_name, 'rb') as f:
             update.message.reply_video(f, file_name, reply_to_message_id = msg_id, width = w, height = h)
     else:
-        ffmpeg(new, file_name, f'-af asetrate=44100*{real}')
+        ffmpeg(new, file_name, f'-af asetrate=44100*{real},aresample=44100')
 
         with open(file_name, 'rb') as f:
             update.message.reply_audio(f, file_name, reply_to_message_id = msg_id)
