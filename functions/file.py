@@ -3,11 +3,9 @@ from os                                             import listdir, remove, rena
 from subprocess                                     import run as run2
 from urlextract                                     import URLExtract
 from shutil                                         import rmtree
-from time                                           import time
 
 from .utils                                         import *
 
-import globals
 import os
 import re
 
@@ -33,7 +31,7 @@ exts = (
 )
 
 
-with open('bad_words.txt') as f:
+with open('bad_words.txt', encoding = 'utf-8') as f:
     bad_words = [r'.*' + i + r'.*' if '^' not in i else i for i in f.read().split('\n')]
 
 
@@ -96,9 +94,9 @@ def check_file(update, file_name, file_id, mb = 20):
 
 def ffmpeg(inp, out, cmd_after, oga = '', cmd_before = ''):
     if inp.split('.')[-1] == 'oga':
-        return run(f'ffmpeg {cmd_before} -i "{inp}" -c:a libopus {cmd_after} "{out}"')
-    else:
-        return run(f'ffmpeg {cmd_before} -i "{inp}" {oga} {cmd_after} "{out}"')
+        oga = '-c:a libopus'
+
+    return run(f'ffmpeg {cmd_before} -i "{inp}" {oga} {cmd_after} "{out}"')
 
 
 
@@ -122,16 +120,11 @@ def image(update, ctx, n = 1, query = None):
     else:
         args = query.split()
 
-    uid = update.message.from_user.id
+    query = '_'.join(args)
 
     if is_bad(query):
-        globals.banned[uid] = time()
+        update.message.delete()
         return
-
-    if uid in globals.banned and time() - globals.banned[uid] < 300:
-        return
-
-    query = '_'.join(args)
 
     download(' '.join(args), n)
 
@@ -410,7 +403,7 @@ def loop_audio_video(update, ctx):
 
     msg_id, file_name, file_id = get_reply(update)
 
-    if not (check := check_file(update, file_name, file_id, 50 / (value + 1) - 0.05)):
+    if not (check := check_file(update, file_name, file_id, 30 / (value + 1) - 0.05)):
         return
 
     file_name, new = check

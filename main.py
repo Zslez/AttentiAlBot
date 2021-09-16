@@ -474,7 +474,7 @@ def main():
     job5.run_daily(callback = promemoria_giornaliero, days = (0, 1, 2, 3,       6), time = time(hour = 12, minute = 15))
     job6.run_daily(callback = promemoria_giornaliero, days = (0, 1, 2, 3,       6), time = time(hour = 19, minute =  0))
 
-    job7.run_repeating(callback = get_news_job,       first = 10,                   interval = timedelta(minutes  = 15))
+    job7.run_repeating(callback = get_news_job,       first = 10,                   interval = timedelta(minutes  = 10))
 
     job1.start()
     job2.start()
@@ -487,7 +487,7 @@ def main():
 
     # PRENDE LE NEWS DALLA BACHECA
 
-    up.job_queue.run_repeating(callback = get_news, interval = timedelta(minutes = 20), first = 100)
+    up.job_queue.run_repeating(callback = get_news, interval = timedelta(minutes = 10), first = 100)
 
     up.start_polling()
 

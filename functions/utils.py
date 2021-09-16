@@ -1,8 +1,9 @@
 from urllib.parse       import quote_plus
-from telegram.update    import Update
 from requests           import get
 
 import os
+
+from telegram.update import Update
 import globals
 
 
@@ -75,18 +76,18 @@ def send_photo(chat, photo, msg = None, markdown = None, preview = False):
 
 
 
-def reply(update: Update, msg, markdown = 0, preview = False):
+def reply(update: Update, msg, markdown = 0, preview = False, timeout = None):
     if not markdown:
-        return update.message.reply_text(msg.strip(), disable_web_page_preview = not preview)
+        return update.message.reply_text(msg.strip(), disable_web_page_preview = not preview, timeout = timeout)
 
     if markdown == 1:
-        return update.message.reply_markdown(msg.strip(), disable_web_page_preview = not preview)
+        return update.message.reply_markdown(msg.strip(), disable_web_page_preview = not preview, timeout = timeout)
 
-    return update.message.reply_markdown_v2(msg.strip(), disable_web_page_preview = not preview)
+    return update.message.reply_markdown_v2(msg.strip(), disable_web_page_preview = not preview, timeout = timeout)
 
 
 
-def reply_callback(update: Update, msg):
+def reply_callback(update, msg):
     update.callback_query.message.reply_markdown(msg.strip(), disable_web_page_preview = True)
 
 

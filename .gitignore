@@ -10,3 +10,5 @@ up.bat
 
 test.py
 backup.txt
+
+__pycache__

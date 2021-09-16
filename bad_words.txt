@@ -2,13 +2,12 @@
 bocchin
 cazz
 cock
-cul
+^culo .*|(.* culo)$|^culo$|.* culo .*
+^culet .*|(.* culet)$|^culet$|.* culet .*
 dick
- fica
- figa
-^fica
-^figa
-gravid
+^fica.*|.* fica.*
+^figa.*|.* figa.*
+ingravid
 negr
 nigg
 nibb
@@ -18,11 +17,14 @@ palle
 pelos
 pene
 pisell
-pomp
+pompa
+pompin
 porn
 puttan
 sborr
-sbur
+sbura
+sburo
+sburr
 scopa
 scopi
 scopo
@@ -30,3 +32,4 @@ scrot
 sex
 sess
 trans
+troia
