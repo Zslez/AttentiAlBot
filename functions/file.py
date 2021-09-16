@@ -3,10 +3,13 @@ from os                                             import listdir, remove, rena
 from subprocess                                     import run as run2
 from urlextract                                     import URLExtract
 from shutil                                         import rmtree
+from time                                           import time
 
 from .utils                                         import *
 
+import globals
 import os
+import re
 
 
 
@@ -28,6 +31,10 @@ exts = (
     'webm', 'mkv', 'flv', 'mp4', 'vob', 'ogg', 'ogv', 'drc',
     'gif', 'avi', 'mov', 'm4p', 'm4v', 'mpg', 'mpeg', 'mpv'
 )
+
+
+with open('bad_words.txt') as f:
+    bad_words = [r'.*' + i + r'.*' if '^' not in i else i for i in f.read().split('\n')]
 
 
 extract = URLExtract().find_urls
@@ -101,11 +108,28 @@ def ffmpeg(inp, out, cmd_after, oga = '', cmd_before = ''):
 
 
 
+def is_bad(query):
+    for i in bad_words:
+        if re.match(i, query):
+            return True
+
+    return False
+
+
 def image(update, ctx, n = 1, query = None):
     if not query:
         args = ctx.args
     else:
         args = query.split()
+
+    uid = update.message.from_user.id
+
+    if is_bad(query):
+        globals.banned[uid] = time()
+        return
+
+    if uid in globals.banned and time() - globals.banned[uid] < 300:
+        return
 
     query = '_'.join(args)
 

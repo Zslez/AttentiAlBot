@@ -45,3 +45,5 @@ lnu = None
 max_news = 70
 
 lineno = 0
+
+banned = {}

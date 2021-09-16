@@ -127,8 +127,25 @@ per ora rimane così, poi credo toglierò questa cosa\.
 ''', markdown = 2)
 
 
+def private_deco(func):
+    def new_func(update, ctx):
+        try:
+            func(update, ctx)
+        except:
+            user = update.message.from_user
+            reply(
+                update,
+                f'Hey [{user.name}](tg://user?id={user.id}), inviami prima un messaggio in privata.',
+                1
+            )
+
+    return new_func
+
+
+
 # funzione help con i vari buttons per le info
 
+@private_deco
 def help(update, ctx):
     keyboard = help_keyboard()
 
@@ -241,7 +258,7 @@ def get_users(update, ctx):
         send(
             privata,
             '\n'.join(
-                ['```' + str(i.id).ljust(15) + ' ' + i.first_name + '```' for i in users_lst]
+                ['`' + str(i.id).ljust(15) + ' ' + i.first_name + '`' for i in users_lst]
             )
         )
 
@@ -377,7 +394,7 @@ def main():
 
     # SCUOLA
 
-    dp.add_handler(CommandHandler("class",      deco(get_courses)))
+    dp.add_handler(CommandHandler("class",      deco(private_deco(get_courses))))
     dp.add_handler(CommandHandler("compiti",    deco(compiti)))
     dp.add_handler(CommandHandler("news",       deco(get_news_command)))
     dp.add_handler(CommandHandler("promemoria", deco(promemoria)))
@@ -398,7 +415,7 @@ def main():
     dp.add_handler(CommandHandler("sp",         deco(speed_pitch_audio_video)))
     dp.add_handler(CommandHandler("v",          deco(to_video)))
 
-    dp.add_handler(CommandHandler("cl",         deco(get_courses)))
+    dp.add_handler(CommandHandler("cl",         deco(private_deco(get_courses))))
     dp.add_handler(CommandHandler("c",          deco(compiti)))
     dp.add_handler(CommandHandler("n",          deco(get_news_command)))
     dp.add_handler(CommandHandler("p",          deco(promemoria)))
