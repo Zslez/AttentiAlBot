@@ -3,14 +3,33 @@ import os
 
 
 
+def join(str1, str2):
+	a = list(str1)
+	b = list(str2)
+	biter = iter(b)
+
+	if len(a) == len(b):
+		a = [' '] + a
+
+	res = '?'.join(a)
+
+	while '?' in res:
+		res = res.replace('?', next(biter), 1)
+
+	if len(a) == len(b):
+		return (res.strip() + b[-1])[::-1]
+	else:
+		return res[::-1].strip()
+
+
+
 token = {}
 
-token['token']          = os.environ['GTOKEN']
-token['refresh_token']  = os.environ['GREFRESH']
+token['token']          = join(*os.environ['GTOKEN'].split(';;;'))
+token['refresh_token']  = join(*os.environ['GREFRESH'].split(';;;'))
 token['token_uri']      = os.environ['GURI']
 token['client_id']      = os.environ['GCLIENTID']
-token['client_secret']  = os.environ['GSECRET']
-token['scopes']         = os.environ['GSCOPES'].split(',')
+token['client_secret']  = join(*os.environ['GSECRET'].split(';;;'))
 token['expiry']         = os.environ['GEXP']
 
 with open('token.json', 'w') as f:

@@ -14,9 +14,6 @@ SCOPES = [
     'https://www.googleapis.com/auth/classroom.courses.readonly',
     'https://www.googleapis.com/auth/classroom.announcements.readonly',
     'https://www.googleapis.com/auth/classroom.student-submissions.me.readonly',
-    #'https://www.googleapis.com/auth/classroom.profile.photos',
-    #'https://www.googleapis.com/auth/classroom.profile.emails',
-    #'https://www.googleapis.com/auth/classroom.guardianlinks.me.readonly',
     'https://www.googleapis.com/auth/classroom.courseworkmaterials.readonly',
     'https://www.googleapis.com/auth/classroom.topics.readonly'
 ]
@@ -24,13 +21,14 @@ SCOPES = [
 
 creds = Credentials.from_authorized_user_file('token.json', SCOPES)
 
+
+if creds and creds.expired and creds.refresh_token:
+    creds.refresh(Request())
+
 '''
 if not creds or not creds.valid:
-    if creds and creds.expired and creds.refresh_token:
-        creds.refresh(Request())
-    else:
-        flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
-        creds = flow.run_local_server(port = 8080)
+    flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
+    creds = flow.run_local_server(port = 8080)
 
     with open('token.json', 'w') as token:
         token.write(creds.to_json())
