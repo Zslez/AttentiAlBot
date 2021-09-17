@@ -52,23 +52,20 @@ __all__ = [
 
 def get_news(ctx):
     with webdriver.Chrome(options = options, desired_capabilities = capabilities) as dri:
-        dri.get('https://www.portaleargo.it/')
+        dri.get('http://www.ss16383.scuolanext.info/')
 
-        wait_5 = WebDriverWait(dri, 5)
+        wait_10 = WebDriverWait(dri, 10)
         xpath = By.XPATH
 
-        wait_5.until(presence((xpath, '/html/body/div[5]/div/div/div/span[1]/a'))).click()
-        WebDriverWait(dri, 10).until(presence((xpath, '//*[@id="codiceScuola"]'))).send_keys('SS16383')
-
-        dri.find_element_by_xpath('//*[@id="username"]').send_keys(uname)
+        wait_10.until(presence((xpath, '//*[@id="username"]'))).send_keys(uname)
         dri.find_element_by_xpath('//*[@id="password"]').send_keys(passw)
         dri.find_element_by_xpath('//*[@id="accediBtn"]').click()
 
-        WebDriverWait(dri, 30).until(presence((xpath, '//*[@id="_idJsp27"]/div[1]/div[1]'))).click()
-        wait_5.until(presence((xpath, '//*[@id="bacheca"]/table/tbody/tr[3]/td[2]/div/div[3]'))).click()
-        wait_5.until(presence((xpath, '//*[@id="sheet-bacheca:tree:scuola"]/div'))).click()
+        wait_10.until(presence((xpath, '//*[@id="_idJsp27"]/div[1]/div[1]'))).click()
+        wait_10.until(presence((xpath, '//*[@id="bacheca"]/table/tbody/tr[3]/td[2]/div/div[3]'))).click()
+        wait_10.until(presence((xpath, '//*[@id="sheet-bacheca:tree:scuola"]/div'))).click()
 
-        table = wait_5.until(
+        table = wait_10.until(
             presence(
                 (
                     xpath,
@@ -108,7 +105,7 @@ def get_news(ctx):
                 if table.find_element_by_xpath(f'.//tr[{i + 1}]/td[1]').text == 'File:'
             ]:
             j.click()
-            sleep(2)
+            sleep(1.8)
 
             try:
                 file = loads(dri.get_log('performance')[-1]['message'])['message']['params']['url']

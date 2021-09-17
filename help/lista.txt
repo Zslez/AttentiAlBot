@@ -13,11 +13,9 @@
 ‣ /earrape \(alias /e\)
 ‣ /image \(alias /i\)
 ‣ /loop \(alias /l\)
-‣ /napoli
 ‣ /reverse \(alias /r\)
 ‣ /speed \(alias /s\)
 ‣ /speedpitch \(alias /sp\)
-‣ /stronzodio
 ‣ /video \(alias /v\)
 
 *ALTRO*

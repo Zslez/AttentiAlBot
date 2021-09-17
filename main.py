@@ -351,21 +351,6 @@ def error(update, ctx):
 
 
 
-
-# altra goliardia 😳
-
-def dio(update, ctx):
-    with open('stickers/samir.webp', 'rb') as f:
-        update.message.reply_sticker(f)
-        reply(update, '!oznortS oiD'[::-1])
-
-
-
-def napoli(update, ctx):
-    image(update, ctx, randint(1, 8), choice(['napoli meme', 'napoli scimmia']))
-
-
-
 # MAIN
 
 def main():
@@ -421,12 +406,6 @@ def main():
     dp.add_handler(CommandHandler("p",          deco(promemoria)))
 
 
-    # ALTRI COMANDI
-
-    dp.add_handler(CommandHandler("napoli",     deco(napoli)))
-    dp.add_handler(CommandHandler("stronzodio", deco(dio)))
-
-
     # PER ME
 
     dp.add_handler(CommandHandler("users",      get_users))
@@ -469,12 +448,12 @@ def main():
 
     job1.run_daily(callback = update_and_restart,     days = (0, 1, 2, 3, 4, 5, 6), time = time(hour =  1, minute =  0))
     job2.run_daily(callback = change_heroku,          days = (0, 1, 2, 3, 4, 5, 6), time = time(hour =  2, minute =  0))
-    job3.run_daily(callback = verifica,               days = (0, 1, 2, 3, 4      ), time = time(hour = 11, minute = 45))
-    job4.run_daily(callback = get_today,              days = (0, 1, 2, 3, 4      ), time = time(hour = 12, minute =  0))
-    job5.run_daily(callback = promemoria_giornaliero, days = (0, 1, 2, 3,       6), time = time(hour = 12, minute = 15))
+    job3.run_daily(callback = verifica,               days = (0, 1, 2, 3, 4      ), time = time(hour = 13, minute = 20))
+    job4.run_daily(callback = get_today,              days = (0, 1, 2, 3, 4      ), time = time(hour = 13, minute = 30))
+    job5.run_daily(callback = promemoria_giornaliero, days = (0, 1, 2, 3,       6), time = time(hour = 13, minute = 45))
     job6.run_daily(callback = promemoria_giornaliero, days = (0, 1, 2, 3,       6), time = time(hour = 19, minute =  0))
 
-    job7.run_repeating(callback = get_news_job,       first = 10,                   interval = timedelta(minutes  = 10))
+    job7.run_repeating(callback = get_news_job,       first = 10,                   interval = timedelta(minutes  =  5))
 
     job1.start()
     job2.start()
@@ -487,7 +466,7 @@ def main():
 
     # PRENDE LE NEWS DALLA BACHECA
 
-    up.job_queue.run_repeating(callback = get_news, interval = timedelta(minutes = 10), first = 100)
+    up.job_queue.run_repeating(callback = get_news, interval = timedelta(minutes = 5), first = 30)
 
     up.start_polling()
 
