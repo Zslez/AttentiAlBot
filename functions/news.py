@@ -3,15 +3,15 @@ from selenium.webdriver                                     import DesiredCapabi
 from bs4                                                    import BeautifulSoup as bs
 from selenium.webdriver.support.ui                          import WebDriverWait
 from selenium                                               import webdriver
-from requests                                               import get, post
 from selenium.webdriver.chrome.options                      import Options
+from shutil                                                 import rmtree
 from json                                                   import loads
 from time                                                   import sleep
+from requests                                               import get
 from selenium.webdriver.common.by                           import By
 
 from .utils                                                 import reply, send, escape_md, send_photo
 
-import heroku3
 import os
 
 import globals
@@ -30,19 +30,12 @@ news_channel = -1001568629792
 
 
 
-# PER ACCORCIARE GLI URL CON BITLY
+# opzioni per Chrome
 
-bittoken = '' if globals.name else os.environ['BITTOKEN']
-
-header = {'Authorization': 'Bearer ' + bittoken, 'Content-Type': 'application/json'}
 
 capabilities = DesiredCapabilities.CHROME
 capabilities["goog:loggingPrefs"] = {"performance": "ALL"}
 
-
-
-
-# opzioni per Chrome
 
 options = Options()
 options.add_argument('--headless')
@@ -58,8 +51,6 @@ __all__ = [
 
 
 def get_news(ctx):
-    n = 1
-
     with webdriver.Chrome(options = options, desired_capabilities = capabilities) as dri:
         dri.get('https://www.portaleargo.it/')
 
@@ -81,20 +72,15 @@ def get_news(ctx):
             presence(
                 (
                     xpath,
-                    f'//*[@id="panel-messaggiBacheca:form"]/table/tbody/fieldset[{n}]/tr/td[2]/table'
+                    f'//*[@id="panel-messaggiBacheca:form"]/table/tbody/fieldset[1]/tr/td[2]/table'
                 )
             )
         )
 
-        if not table:
-            return
-
         bstable = bs(table.get_attribute('innerHTML'), 'html.parser')
 
         content = [[j.strip() for j in i.text.split(': ')] for i in bstable.find_all('tr')]
-        ogg = ''
-        msg = ''
-        files = {}
+        files = []
         urls = []
         pv = False
 
@@ -108,7 +94,7 @@ def get_news(ctx):
                 if save == globals.hnews:
                     return
             elif i[0] == 'File':
-                files[i[1]] = None
+                files.append(i[1])
             elif i[0] == 'Url':
                 urls.append(i[1])
             elif i[0] == 'Presa Visione':
@@ -122,33 +108,22 @@ def get_news(ctx):
                 if table.find_element_by_xpath(f'.//tr[{i + 1}]/td[1]').text == 'File:'
             ]:
             j.click()
-            sleep(2.5)
+            sleep(2)
 
             try:
                 file = loads(dri.get_log('performance')[-1]['message'])['message']['params']['url']
             except KeyError:
                 file = 'https://youtu.be/kw1kc2U6NmA'
 
-            data = {
-                "long_url": file,
-                "group_guid": 'Bl7pg5tTZil'
-            }
+            os.mkdir('allegati')
 
-            files[list(files)[c]] = post(
-                'https://api-ssl.bitly.com/v4/shorten',
-                json = data,
-                headers = header
-            ).json()["link"]
+            with open(f'allegati/' + list(files)[c], 'wb') as f:
+                f.write(get(file).content)
 
             c += 1
 
-        if len(files) == 0:
-            files = {'circ_allegato.pdf': 'https://youtu.be/kw1kc2U6NmA'}
-
-        files = '*FILE ALLEGATI:*\n  ‣ ' + '\n  ‣ '.join([f'[{escape_md(k)}]({v})' for k, v in files.items()])
-
         if len(urls) > 0:
-            urls = '\n\n*URL ALLEGATI:*\n  ‣ ' + '\n  ‣ '.join(urls)
+            urls = '*URL ALLEGATI:*\n  ‣ ' + '\n  ‣ '.join(urls)
         else:
             urls = ''
 
@@ -157,11 +132,17 @@ def get_news(ctx):
         else:
             pv = ''
 
-        res = ogg + escape_md(msg) + files + escape_md(urls) + escape_md(pv)
+        res = ogg + escape_md(msg + urls + pv)
 
     globals.hnews = save
 
     send(news_channel, res)
+
+    for i in os.listdir('allegati'):
+        with open(f'allegati/{i}', 'rb') as f:
+            ctx.bot.send_document(chat_id = news_channel, filename = i, document = f)
+
+    rmtree('allegati')
 
 
 

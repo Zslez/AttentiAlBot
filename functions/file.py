@@ -31,8 +31,8 @@ exts = (
 )
 
 
-with open('bad_words.txt', encoding = 'utf-8') as f:
-    bad_words = [r'.*' + i + r'.*' if '^' not in i else i for i in f.read().split('\n')]
+with open('bad.txt', encoding = 'utf-8') as f:
+    bad = [r'.*' + i + r'.*' if '^' not in i else i for i in f.read().split('\n')]
 
 
 extract = URLExtract().find_urls
@@ -107,7 +107,7 @@ def ffmpeg(inp, out, cmd_after, oga = '', cmd_before = ''):
 
 
 def is_bad(query):
-    for i in bad_words:
+    for i in bad:
         if re.match(i, query):
             return True
 

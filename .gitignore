@@ -12,3 +12,7 @@ test.py
 backup.txt
 
 __pycache__
+
+chromedriver.exe
+
+bad.txt

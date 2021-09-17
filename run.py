@@ -53,4 +53,9 @@ globals.name = False
 
 
 
+with open('bad.txt', 'w', encoding = 'utf-8') as f:
+	f.write('\n'.join(os.environ['BAD'].split(';;;')))
+
+
+
 import main
