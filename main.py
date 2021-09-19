@@ -34,8 +34,8 @@ globals.lnu = None if globals.name else os.environ['LNU']
 globals.max_news = 70 if globals.name else int(os.environ['MAXNEWS'])
 globals.hnews = None if globals.name else os.environ['NEWS']
 
-with open('token.json') as f:
-    gtoken = json.load(f)
+with open('start.txt', encoding = 'utf-8') as f:
+    start_text = f.read().strip()
 
 privata = 781455352                 # il mio ID Telegram
 gruppo = -1001261320605             # l'ID del gruppo
@@ -72,74 +72,39 @@ comandi = [
 ]
 
 
+comandi_per_tutti = [
+    'start',
+    'help'
+]
 
-# COMANDI GENERICI
+
+
+# COMANDI
 
 def start(update, ctx):
-    if update.message.chat.id == gruppo:
-        reply(update, choice(['Weilà', 'Hey', 'Привет', 'ちわっす', '嘿']))
-        return
-
-    reply(update, choice(['Weilà', 'Hey', 'Привет', 'ちわっす', '嘿']) + f'''
-\n*Info sul Bot*
-
-Con questo Bot è possibile ottenere *compiti*, *promemoria* e *notizie* \
-direttamente su Telegram senza bisogno di credenziali, sia in chat privata che sui gruppi\.
-
-Il Bot invierà anche alcuni messaggi in automatico sul gruppo ogni giorno ad un certo orario, \
-come gli argomenti della giornata appena finita, i promemoria e i compiti per il giorno successivo\.
-
-Inoltre ci sono tante altre funzioni per puro divertimento, che servono a modificare \
-in vari modi audio e video \(funziona anche con i *messaggi vocali*\)\.
-
-
-*Come usare i comandi*
-
-Usa il comando /help per ricevere la lista dei comandi e informazioni dettagliate su come usarli\.
-
-
-*Nuove funzioni da proporre?*
-
-*[Scrivimi](https://t.me/cristiano_san)* \(puoi scrivermi anche se non hai da proporre nulla 😔\)\.
-
-
-*Non sei della mia classe e vuoi usare il Bot?*
-
-*[Scrivimi](https://t.me/cristiano_san)* dicendo chi sei e perché ti serve\.
-
-
-*Non ti fidi di [me](https://t.me/cristiano_san)?*
-
-Understandable, tuttavia [qui](https://github.com/Zslez/AttentiAlBot) su GitHub c'è il codice del Bot, \
-completo e abbastanza commentato\. Se ti servono spiegazioni su come funziona chiedi pure\.
-In ogni caso, le mie credenziali usate per accedere ad ARGO sono le mie \
-e non servono dati per usare i comandi\.
-
-
-*ATTENZIONE*
+    reply(
+        update,
+        choice(
+            [
+                'Weilà',
+                'Hey',
+                'Привет',
+                'ちわっす',
+                '嘿'
+            ]
+        ) + [
+            '',
+            '\n\n' + start_text + f'''\n\n\n*ATTENZIONE*
 per sapere se ci sono errori e per capire come correggerli, \
 [inoltro in un canale privato il testo di tutti i comandi usati]\
 (https://github.com/Zslez/AttentiAlBot/blob/master/main.py#L{globals.lineno}), quindi, \
 *NON* inviare mai dati sensibili al Bot quando usi un comando, anche perché *non è mai necessario farlo*\.
 Di conseguenza, non mi prendo alcuna responsabilità per questo tipo di _incidenti_\.
 Dato che ancora ogni tanto escono fuori cose da sistemare, \
-per ora rimane così, poi credo toglierò questa cosa\.
-''', markdown = 2)
-
-
-def private_deco(func):
-    def new_func(update, ctx):
-        try:
-            func(update, ctx)
-        except:
-            user = update.message.from_user
-            reply(
-                update,
-                f'Hey [{user.name}](tg://user?id={user.id}), inviami prima un messaggio in privata.',
-                1
-            )
-
-    return new_func
+per ora rimane così, poi credo toglierò questa cosa\.'''
+        ][update.message.chat.id != gruppo],
+        markdown = 2
+    )
 
 
 
@@ -232,17 +197,17 @@ def deco(func):
                 'USER ID: ' + str(uid) + \
                 '\nUSER NAME: ' + uname + \
                 f'\nREGISTRATO: {uid in intusers}' + \
-                '\nCOMANDO:\n' + message.text
+                '\nCOMANDO:\n' + message.text.replace('@AttentiAlGruppoBot', '')
             )
 
 
         # se chi usa il comando non è nella lista di chi può usare il Bot
 
         if uid not in intusers:
-            if message.chat_id != gruppo:   # se scrive in privata
+            if message.chat_id != gruppo and func.__name__ not in comandi_per_tutti:
                 send(uid, 'Invia prima un messaggio nel gruppo, così so che fai parte della classe\.')
                 return
-            else:                           # se scrive sul gruppo
+            else:
                 users.append(str(uid))
                 intusers.append(uid)
 
@@ -298,7 +263,7 @@ def update_and_restart(update, ctx = None):
 
 
 
-# COMMANDS
+# ALTRE FUNZIONI
 
 def word_check(update, ctx):
     message = update.effective_message
@@ -357,59 +322,62 @@ def main():
     up = Updater(token, use_context = True)
     dp = up.dispatcher
 
+    def cmdh(name, func):
+        return CommandHandler(name, deco(func), run_async = True)
+
 
     # COMANDI BASE
 
-    dp.add_handler(CommandHandler("help",       deco(help)))
-    dp.add_handler(CommandHandler("start",      start))
+    dp.add_handler(cmdh("help",       help))
+    dp.add_handler(cmdh("start",      start))
 
 
     # COMANDI PER DIVERTIMENTO
 
-    dp.add_handler(CommandHandler("audio",      deco(to_audio)))
-    dp.add_handler(CommandHandler("cut",        deco(cut_audio_video)))
-    dp.add_handler(CommandHandler("earrape",    deco(earrape)))
-    dp.add_handler(CommandHandler("loop",       deco(loop_audio_video)))
-    dp.add_handler(CommandHandler("image",      deco(image)))
-    dp.add_handler(CommandHandler("reverse",    deco(reverse_audio_video)))
-    dp.add_handler(CommandHandler("speed",      deco(speed_audio_video)))
-    dp.add_handler(CommandHandler("speedpitch", deco(speed_pitch_audio_video)))
-    dp.add_handler(CommandHandler("video",      deco(to_video)))
+    dp.add_handler(cmdh("audio",      to_audio))
+    dp.add_handler(cmdh("cut",        cut_audio_video))
+    dp.add_handler(cmdh("earrape",    earrape))
+    dp.add_handler(cmdh("loop",       loop_audio_video))
+    dp.add_handler(cmdh("image",      image))
+    dp.add_handler(cmdh("reverse",    reverse_audio_video))
+    dp.add_handler(cmdh("speed",      speed_audio_video))
+    dp.add_handler(cmdh("speedpitch", speed_pitch_audio_video))
+    dp.add_handler(cmdh("video",      to_video))
 
 
     # SCUOLA
 
-    dp.add_handler(CommandHandler("class",      deco(private_deco(get_courses))))
-    dp.add_handler(CommandHandler("compiti",    deco(compiti)))
-    dp.add_handler(CommandHandler("news",       deco(get_news_command)))
-    dp.add_handler(CommandHandler("promemoria", deco(promemoria)))
-    dp.add_handler(CommandHandler("sacrifica",  deco(sacrifica)))
-    dp.add_handler(CommandHandler("today",      deco(get_today_again)))
+    dp.add_handler(cmdh("class",      get_courses))
+    dp.add_handler(cmdh("compiti",    compiti))
+    dp.add_handler(cmdh("news",       get_news_command))
+    dp.add_handler(cmdh("promemoria", promemoria))
+    dp.add_handler(cmdh("sacrifica",  sacrifica))
+    dp.add_handler(cmdh("today",      get_today_again))
 
 
     # ALIAS
 
-    dp.add_handler(CommandHandler("h",          deco(help)))
+    dp.add_handler(cmdh("h",          help))
 
-    dp.add_handler(CommandHandler("a",          deco(to_audio)))
-    dp.add_handler(CommandHandler("e",          deco(earrape)))
-    dp.add_handler(CommandHandler("i",          deco(image)))
-    dp.add_handler(CommandHandler("l",          deco(loop_audio_video)))
-    dp.add_handler(CommandHandler("r",          deco(reverse_audio_video)))
-    dp.add_handler(CommandHandler("s",          deco(speed_audio_video)))
-    dp.add_handler(CommandHandler("sp",         deco(speed_pitch_audio_video)))
-    dp.add_handler(CommandHandler("v",          deco(to_video)))
+    dp.add_handler(cmdh("a",          to_audio))
+    dp.add_handler(cmdh("e",          earrape))
+    dp.add_handler(cmdh("i",          image))
+    dp.add_handler(cmdh("l",          loop_audio_video))
+    dp.add_handler(cmdh("r",          reverse_audio_video))
+    dp.add_handler(cmdh("s",          speed_audio_video))
+    dp.add_handler(cmdh("sp",         speed_pitch_audio_video))
+    dp.add_handler(cmdh("v",          to_video))
 
-    dp.add_handler(CommandHandler("cl",         deco(private_deco(get_courses))))
-    dp.add_handler(CommandHandler("c",          deco(compiti)))
-    dp.add_handler(CommandHandler("n",          deco(get_news_command)))
-    dp.add_handler(CommandHandler("p",          deco(promemoria)))
+    dp.add_handler(cmdh("cl",         get_courses))
+    dp.add_handler(cmdh("c",          compiti))
+    dp.add_handler(cmdh("n",          get_news_command))
+    dp.add_handler(cmdh("p",          promemoria))
 
 
     # PER ME
 
-    dp.add_handler(CommandHandler("users",      get_users))
-    dp.add_handler(CommandHandler("restart",    update_and_restart))
+    dp.add_handler(cmdh("users",      get_users))
+    dp.add_handler(cmdh("restart",    update_and_restart))
 
 
     # ALTRI HANDLER
@@ -436,37 +404,30 @@ def main():
     job4 = JobQueue()
     job5 = JobQueue()
     job6 = JobQueue()
-    job7 = JobQueue()
 
     job1.set_dispatcher(dp)
     job2.set_dispatcher(dp)
     job3.set_dispatcher(dp)
     job4.set_dispatcher(dp)
     job5.set_dispatcher(dp)
-    job6.set_dispatcher(dp)
-    job7.set_dispatcher(dp)
 
-    job1.run_daily(callback = update_and_restart,     days = (0, 1, 2, 3, 4, 5, 6), time = time(hour =  1, minute =  0))
-    job2.run_daily(callback = change_heroku,          days = (0, 1, 2, 3, 4, 5, 6), time = time(hour =  2, minute =  0))
-    job3.run_daily(callback = verifica,               days = (0, 1, 2, 3, 4      ), time = time(hour = 13, minute = 20))
-    job4.run_daily(callback = get_today,              days = (0, 1, 2, 3, 4      ), time = time(hour = 13, minute = 30))
-    job5.run_daily(callback = promemoria_giornaliero, days = (0, 1, 2, 3,       6), time = time(hour = 13, minute = 45))
-    job6.run_daily(callback = promemoria_giornaliero, days = (0, 1, 2, 3,       6), time = time(hour = 19, minute =  0))
+    job1.run_daily(callback = update_and_restart,     days = (0, 1, 2, 3, 4, 5, 6), time = time(hour =  3, minute =  0))
+    job2.run_daily(callback = change_heroku,          days = (0, 1, 2, 3, 4, 5, 6), time = time(hour =  5, minute =  0))
+    job3.run_daily(callback = get_today,              days = (0, 1, 2, 3, 4      ), time = time(hour = 15, minute = 30))
+    job4.run_daily(callback = promemoria_giornaliero, days = (0, 1, 2, 3,       6), time = time(hour = 15, minute = 40))
 
-    job7.run_repeating(callback = get_news_job,       first = 10,                   interval = timedelta(minutes  =  5))
+    job5.run_repeating(callback = get_news_job,       first = 10,                   interval = timedelta(minutes  =  3))
 
     job1.start()
     job2.start()
     job3.start()
     job4.start()
     job5.start()
-    job6.start()
-    job7.start()
 
 
     # PRENDE LE NEWS DALLA BACHECA
 
-    up.job_queue.run_repeating(callback = get_news, interval = timedelta(minutes = 5), first = 30)
+    up.job_queue.run_repeating(callback = get_news, interval = timedelta(minutes = 3), first = 30)
 
     up.start_polling()
 

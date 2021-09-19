@@ -31,6 +31,9 @@ exts = (
 )
 
 
+limit = 6
+
+
 with open('bad.txt', encoding = 'utf-8') as f:
     bad = [r'.*' + i + r'.*' if '^' not in i else i for i in f.read().split('\n')]
 
@@ -75,12 +78,12 @@ def get_size(video):
 
 
 
-def check_file(update, file_name, file_id, mb = 20):
+def check_file(update, file_name, file_id, mb = limit):
     if file_name.count('.') == 0:
         return
 
-    if mb > 20:
-        mb = 20
+    if mb > limit:
+        mb = limit
 
     new = download_file(file_id, mb)
 
@@ -197,7 +200,7 @@ def to_audio(update, ctx):
     else:
         url = ctx.args[0]
 
-    run(f'youtube-dl -o "%(title)s.%(ext)s" --extract-audio --audio-format mp3 {url}')
+    run(f'youtube-dl --max-filesize 10m -o "%(title)s.%(ext)s" --extract-audio --audio-format mp3 {url}')
     name = run(f'youtube-dl --get-filename -o "%(title)s.%(ext)s" {url}').stdout.decode().strip()
 
     base = '.'.join(name.split('.')[:-1]).split('\\')[-1]
@@ -228,7 +231,7 @@ def to_video(update, ctx):
     else:
         url = ctx.args[0]
 
-    run(f'youtube-dl --max-filesize 49m -o "%(title)s.%(ext)s" -f best {url}')
+    run(f'youtube-dl --max-filesize 15m -o "%(title)s.%(ext)s" -f best {url}')
     name = run(f'youtube-dl --get-filename -o "%(title)s.%(ext)s" {url}').stdout.decode().strip()
     name = name.split('\\')[-1]
 
@@ -403,7 +406,7 @@ def loop_audio_video(update, ctx):
 
     msg_id, file_name, file_id = get_reply(update)
 
-    if not (check := check_file(update, file_name, file_id, 30 / (value + 1) - 0.05)):
+    if not (check := check_file(update, file_name, file_id, limit / (value + 1) - 0.005)):
         return
 
     file_name, new = check

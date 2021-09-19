@@ -76,14 +76,14 @@ def send_photo(chat, photo, msg = None, markdown = None, preview = False):
 
 
 
-def reply(update: Update, msg, markdown = 0, preview = False, timeout = None):
+def reply(update: Update, msg, markdown = 0, preview = False):
     if not markdown:
-        return update.message.reply_text(msg.strip(), disable_web_page_preview = not preview, timeout = timeout)
+        return update.message.reply_text(msg.strip(), disable_web_page_preview = not preview)
 
     if markdown == 1:
-        return update.message.reply_markdown(msg.strip(), disable_web_page_preview = not preview, timeout = timeout)
+        return update.message.reply_markdown(msg.strip(), disable_web_page_preview = not preview)
 
-    return update.message.reply_markdown_v2(msg.strip(), disable_web_page_preview = not preview, timeout = timeout)
+    return update.message.reply_markdown_v2(msg.strip(), disable_web_page_preview = not preview)
 
 
 

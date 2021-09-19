@@ -1,6 +1,6 @@
 from telegram   import InlineKeyboardButton, InlineKeyboardMarkup
 
-from .utils     import escape_md
+from .utils     import escape_md, reply
 
 import globals
 
@@ -13,7 +13,8 @@ __all__ = [
     'courses_callback_ann',
     'courses_callback_work',
     'callback_delete',
-    'callback_null'
+    'callback_null',
+    'private_deco'
 ]
 
 
@@ -36,7 +37,23 @@ months = [
 
 
 
+def private_deco(func):
+    def new_func(update, ctx):
+        try:
+            func(update, ctx)
+        except:
+            user = update.message.from_user
+            reply(
+                update,
+                f'Hey [{user.name}](tg://user?id={user.id}), inviami prima un messaggio in privata.',
+                1
+            )
 
+    return new_func
+
+
+
+@private_deco
 def get_courses(update, ctx):
     keyboard = InlineKeyboardMarkup(get_courses_keyboard())
 

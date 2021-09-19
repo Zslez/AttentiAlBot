@@ -16,7 +16,6 @@ import globals
 __all__ = [
     'get_today',
     'compiti',
-    'verifica',
     'promemoria_giornaliero',
     'promemoria',
     'sacrifica'
@@ -121,64 +120,63 @@ def get_today(ctx, update = False):
 
 
 
-
-def compiti(update, ctx):
-    data = format_data(ctx)
-
-    session = argoscuolanext.Session("SS16383", uname, passw)
-    arg = session.compiti()
+def filtra_compiti(arg, data):
     result = [(i['desMateria'], i['desCompiti']) for i in arg['dati'] if i['datCompiti'] == data]
 
-    g = data.split('-')[2]
-    m = mesi[data.split('-')[1]]
-
     if len(result) > 0:
-        msg = f'*COMPITI PER IL {int(g)} {m}*\n\n\n'
+        msg = ''
         c = 1
 
         for i in result:
             msg += f'{c}\. *{escape_md(i[0])}*\n\n{escape_md(i[1])}\n\n\n'
             c += 1
     else:
-        msg = f'Non ci sono compiti per il {int(g)} {m[0] + m[1:].lower()}\.'
+        msg = None
+
+    return msg
+
+
+
+def compiti(update, ctx):
+    data = format_data(ctx)
+
+    g = data.split('-')[2]
+    m = mesi[data.split('-')[1]]
+    giorno = f'{int(g)} {m[0] + m[1:].lower()}'
+
+    session = argoscuolanext.Session("SS16383", uname, passw)
+    arg = session.compiti()
+
+    if not (msg := filtra_compiti(arg, data)):
+        msg = f'Non ci sono compiti per il {giorno} e per i 5 giorni successivi\.'
+        altro = ''
+
+        for _ in range(5):
+            data = (datetime.strptime(data, '%Y-%m-%d') + timedelta(days = 1)).strftime('%Y-%m-%d')
+
+            if not (msg_2 := filtra_compiti(arg, data)):
+                continue
+
+            g = data.split('-')[2]
+            m = mesi[data.split('-')[1]]
+
+            altro = f'*I COMPITI PIÙ VICINI SONO PER IL {int(g)} {m}*\n\n\n' + msg_2
+            break
+
+        if altro:
+            msg = f'Non ci sono compiti per il {giorno}\.\n\n\n' + altro
+    else:
+        msg = f'*COMPITI PER IL {int(g)} {m}*\n\n\n' + msg
 
     reply(update, msg, markdown = 2)
 
 
 
-
-def verifica(ctx):
-    session = argoscuolanext.Session("SS16383", uname, passw)
-    arg = [i['dati'] for i in session.oggi()['dati'] if i['titolo'] == 'Promemoria']
-
-    for i in arg:
-        if 'verifica' in i['desAnnotazioni'].lower() or 'compito' in i['desAnnotazioni'].lower():
-            materia = prof[i['desMittente'].split()[-1].lower()]
-            ctx.bot.send_poll(gruppo, f'Come è andata la verifica di {materia} di oggi?',
-                ['Molto bene', 'Bene, dai', 'Poteva andare peggio...', 'Meh',
-                'Me la aspettavo più facile', 'Lasciamo perdere', 'Domanda di riserva?'])
-
-
-
-
 def promemoria_giornaliero(ctx):
-    with open('promemoria.txt') as f:
-        text = f.read()
-
-    if text == '01':
-        return
-
-    if text[0] not in ('0', '1'):
-        send(gruppo, 'Vi ricordo nuovamente gli impegni segnati per domani\.\n\n' + text)
-
-        with open('promemoria.txt', 'w') as f:
-            f.write('02')
-
-        return
-
     data = (datetime.today() + timedelta(days = 1)).strftime('%Y-%m-%d')
     session = argoscuolanext.Session("SS16383", uname, passw)
     prom = session.promemoria()['dati']
+
     g = data.split('-')[2]
     m = mesi[data.split('-')[1]]
     msg = f'*PROMEMORIA {int(g)} {m}*\n\n\n'
@@ -191,13 +189,7 @@ def promemoria_giornaliero(ctx):
             msg += '\n\n\n'
 
     if not c:
-        with open('promemoria.txt', 'w') as f:
-            f.write('01')
-
         return
-
-    with open('promemoria.txt', 'w') as f:
-        f.write(msg)
 
     send(gruppo, msg)
 
