@@ -5,6 +5,7 @@ from .file                  import *
 
 import argoscuolanext
 import random
+import pytz
 import json
 import os
 
@@ -48,24 +49,12 @@ mesi = {
     '12': 'DICEMBRE'
 }
 
-prof = {
-    'barone':       'Scienze',
-    'la terza':     'Religione',
-    'spognetta':    'Educazione Fisica',
-    'navarra':      'Arte',
-    'perini':       'Matematica/Fisica',
-    'petterlini':   'Italiano/Latino',
-    'pollaci':      'Storia/Filosofia',
-    'sforza':       'Inglese'
-}
-
-
 
 
 def format_data(ctx):
     args = '-'.join(ctx.args).replace('/', '-').split('-')[::-1]
-    today = datetime.today()
-    year, month = today.year, today.month
+    today = datetime.now(pytz.timezone('Europe/Rome'))
+    year, month = str(today.year), str(today.month)
 
     if args == ['']:
         return (today + timedelta(days = 1)).strftime('%Y-%m-%d')
@@ -75,16 +64,13 @@ def format_data(ctx):
     elif len(args) == 2:
         args = [year, *args]
     elif len(args) == 1:
-        if len(month := str(month)) == 1:
-            month = f'0{month}'
-
-        args = [str(year), month, args[0]]
+        args = [year, month, args[0]]
 
     for i in range(len(args)):
-        if len(str(args[i])) == 1:
-            args[i] = f'0{args[i]}'
+        if len(args[i]) == 1:
+            args[i] = '0' + args[i]
 
-    return '-'.join([str(i) for i in args])
+    return '-'.join(args)
 
 
 
@@ -173,7 +159,7 @@ def compiti(update, ctx):
 
 
 def promemoria_giornaliero(ctx):
-    data = (datetime.today() + timedelta(days = 1)).strftime('%Y-%m-%d')
+    data = (datetime.now(pytz.timezone('Europe/Rome')) + timedelta(days = 1)).strftime('%Y-%m-%d')
     session = argoscuolanext.Session("SS16383", uname, passw)
     prom = session.promemoria()['dati']
 

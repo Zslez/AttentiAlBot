@@ -1,9 +1,9 @@
-from telegram.ext                   import Updater, CommandHandler, MessageHandler, Filters
+from telegram.ext                   import Updater, CommandHandler, MessageHandler, Filters, Defaults
 from telegram                       import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext                   import JobQueue, CallbackQueryHandler
-from random                         import choice, randint
+from logging                        import getLogger, basicConfig, DEBUG
 from datetime                       import time, timedelta
-from logging                        import getLogger
+from random                         import choice
 
 from functions.classroom            import *
 from functions.heroku               import *
@@ -15,6 +15,7 @@ from functions.news                 import *
 import globals
 
 import heroku3
+import pytz
 import json
 import os
 
@@ -22,8 +23,8 @@ import os
 
 # LOGGER
 
+basicConfig(level = DEBUG, format = '%(name)s - %(levelname)s - %(message)s')
 logger = getLogger(__name__)
-
 
 
 # VARIABLES
@@ -319,7 +320,7 @@ def error(update, ctx):
 # MAIN
 
 def main():
-    up = Updater(token, use_context = True)
+    up = Updater(token, use_context = True, defaults = Defaults(tzinfo = pytz.timezone('Europe/Rome')))
     dp = up.dispatcher
 
     def cmdh(name, func):
@@ -403,7 +404,6 @@ def main():
     job3 = JobQueue()
     job4 = JobQueue()
     job5 = JobQueue()
-    job6 = JobQueue()
 
     job1.set_dispatcher(dp)
     job2.set_dispatcher(dp)
