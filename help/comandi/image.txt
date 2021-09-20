@@ -1,7 +1,3 @@
 */image* _\[query\]_
 
 Restituisce un immagine da *Google*, trovata con i termini di ricerca specificati
-
-*ESEMPI:*
-/image microonde
-\=\> immagine di un microonde

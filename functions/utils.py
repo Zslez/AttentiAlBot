@@ -3,7 +3,6 @@ from requests           import get
 
 import os
 
-from telegram.update import Update
 import globals
 
 
@@ -76,7 +75,7 @@ def send_photo(chat, photo, msg = None, markdown = None, preview = False):
 
 
 
-def reply(update: Update, msg, markdown = 0, preview = False):
+def reply(update, msg, markdown = 0, preview = False):
     if not markdown:
         return update.message.reply_text(msg.strip(), disable_web_page_preview = not preview)
 

@@ -1,6 +1,6 @@
-*/compiti* _\[data \(opzionale\)\]_
+*/argomenti* _\[data \(opzionale\)\]_
 
-Restituisce i compiti assegnati per il *giorno specificato*
+Restituisce gli argomenti delle lezioni del *giorno specificato*
 
 *NOTE:*
 ‣ se scritto senza nient'altro dopo viene presa in automatico *la data del giorno successivo*

@@ -4,7 +4,3 @@ Restituisce l'audio o il video dato in input, tagliato dal secondo _inizio_ al s
 
 *NOTA:*
 ‣ per indicare l'audio o il video di input *bisogna rispondere a quel messaggi* con il comando, *senza* scrivere nient'altro
-
-*ESEMPI:*
-/cut  12\.5 20 \(rispondendo ad un messaggio contenente un audio\)
-\=\> audio tagliato da 12\.5 a 20, della durata di 7\.5 secondi \(ovviamente\)

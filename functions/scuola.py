@@ -51,13 +51,13 @@ mesi = {
 
 
 
-def format_data(ctx):
+def format_data(ctx, days):
     args = '-'.join(ctx.args).replace('/', '-').split('-')[::-1]
     today = datetime.now(pytz.timezone('Europe/Rome'))
     year, month = str(today.year), str(today.month)
 
     if args == ['']:
-        return (today + timedelta(days = 1)).strftime('%Y-%m-%d')
+        return (today + timedelta(days = days)).strftime('%Y-%m-%d'), True
     elif len(args) == 3:
         if len(args[0]) == 2:
             args[0] = '20' + args[0]
@@ -70,15 +70,23 @@ def format_data(ctx):
         if len(args[i]) == 1:
             args[i] = '0' + args[i]
 
-    return '-'.join(args)
+    return '-'.join(args), False
 
 
 
 
 def get_today(ctx, update = False):
+    data, default = format_data(ctx, 0)
     session = argoscuolanext.Session(codice_scuola, uname, passw)
-    arg = session.oggi()
+    arg = session.oggi(data)
     dati = arg['dati']
+
+    if default:
+        giorno = 'oggi'
+    else:
+        g = data.split('-')[2]
+        m = mesi[data.split('-')[1]]
+        giorno = f'il {int(g)} {m[0] + m[1:].lower()}'
 
     valid = {
         i['dati']['desMateria']: i['dati']['desArgomento']
@@ -86,9 +94,13 @@ def get_today(ctx, update = False):
     }
 
     if len(valid) == 0:
-        msg = 'Non ci sono novità per oggi\.'
+        msg = f'Non ci sono novità per {giorno}\.'
     else:
-        msg = f'*GLI ARGOMENTI DELLE LEZIONI DI OGGI*\n\n\n'
+        if default:
+            msg = '*GLI ARGOMENTI DELLE LEZIONI DI OGGI*\n\n\n'
+        else:
+            msg = f'*GLI ARGOMENTI DELLE LEZIONI DEL {giorno.upper()}*\n\n\n'
+
         c = 1
 
         for k, v in valid.items():
@@ -124,7 +136,7 @@ def filtra_compiti(arg, data):
 
 
 def compiti(update, ctx):
-    data = format_data(ctx)
+    data, default = format_data(ctx, 1)
 
     g = data.split('-')[2]
     m = mesi[data.split('-')[1]]
@@ -134,7 +146,11 @@ def compiti(update, ctx):
     arg = session.compiti()
 
     if not (msg := filtra_compiti(arg, data)):
-        msg = f'Non ci sono compiti per il {giorno} e per i 5 giorni successivi\.'
+        if default:
+            msg = f'Non ci sono compiti per i prossimi 6 giorni\.'
+        else:
+            msg = f'Non ci sono compiti per il {giorno} e per i 5 giorni successivi\.'
+
         altro = ''
 
         for _ in range(5):
@@ -146,11 +162,18 @@ def compiti(update, ctx):
             g = data.split('-')[2]
             m = mesi[data.split('-')[1]]
 
-            altro = f'*I COMPITI PIÙ VICINI SONO PER IL {int(g)} {m}*\n\n\n' + msg_2
+            if default:
+                altro = f'*I PROSSIMI COMPITI SONO PER IL {int(g)} {m}*\n\n\n' + msg_2
+            else:
+                altro = f'*I COMPITI PIÙ VICINI SONO PER IL {int(g)} {m}*\n\n\n' + msg_2
+
             break
 
         if altro:
-            msg = f'Non ci sono compiti per il {giorno}\.\n\n\n' + altro
+            if default:
+                msg = f'Non ci sono compiti per domani\.\n\n\n' + altro
+            else:
+                msg = f'Non ci sono compiti per il {giorno}\.\n\n\n' + altro
     else:
         msg = f'*COMPITI PER IL {int(g)} {m}*\n\n\n' + msg
 
@@ -183,9 +206,10 @@ def promemoria_giornaliero(ctx):
 
 
 def promemoria(update, ctx):
-    data = format_data(ctx)
+    data, default = format_data(ctx, 1)
     session = argoscuolanext.Session("SS16383", uname, passw)
     prom = session.promemoria()['dati']
+
     g = data.split('-')[2]
     m = mesi[data.split('-')[1]]
     msg = f'*PROMEMORIA {int(g)} {m}*\n\n\n'
@@ -198,7 +222,10 @@ def promemoria(update, ctx):
             msg += '\n\n\n'
 
     if not c:
-        msg = f'Non ci sono promemoria per il {int(g)} {m.lower()}\.'
+        if default:
+            msg = 'Non ci sono promemoria per domani\.'
+        else:
+            msg = f'Non ci sono promemoria per il {int(g)} {m.lower()}\.'
 
     reply(update, msg, markdown = 2)
 

@@ -5,6 +5,8 @@ from logging                        import getLogger, basicConfig, DEBUG
 from datetime                       import time, timedelta
 from random                         import choice
 
+from telegram.update import Update
+
 from functions.classroom            import *
 from functions.heroku               import *
 from functions.scuola               import *
@@ -38,13 +40,26 @@ globals.hnews = None if globals.name else os.environ['NEWS']
 with open('start.txt', encoding = 'utf-8') as f:
     start_text = f.read().strip()
 
-privata = 781455352                 # il mio ID Telegram
-gruppo = -1001261320605             # l'ID del gruppo
+privata      = 781455352            # il mio ID Telegram
+gruppo       = -1001261320605       # l'ID del gruppo
 news_channel = -1001568629792       # l'ID del canale delle news
 attentiallog = -1001533648966       # l'ID del canale delle notifiche che uso per risolvere gli errori
 
 users = [str(privata)] if globals.name else os.environ['USERS'].split(',')
 intusers = [int(i) for i in users]
+
+news_secs = (1000, 3000) if globals.name else (10, 30)
+
+with open('burla.txt', encoding = 'utf-8') as f:
+    ridere = f.read().split('\n')
+
+giorni = [
+    'lunedì',
+    'martedì',
+    'mercoledì',
+    'giovedì',
+    'venerdì'
+]
 
 
 # lista dei comandi del Bot dei quali è possibile vedere la spiegazione con /help
@@ -52,6 +67,7 @@ intusers = [int(i) for i in users]
 comandi = [
     # comandi per scuola
     [
+        'argomenti',
         'class',
         'compiti',
         'news',
@@ -231,7 +247,7 @@ def get_users(update, ctx):
 
 
 def get_today_again(update, ctx):
-    get_today(1, update)
+    get_today(ctx, update)
 
 
 
@@ -260,11 +276,26 @@ def update_and_restart(update, ctx = None):
             }
         )
 
-        send(attentiallog, 'Updated config variables\. Restarting\.\.\.')
-
 
 
 # ALTRE FUNZIONI
+
+
+def orario(update, ctx):
+    try:
+        day = 0 if len(ctx.args) == 0 else max(min(int(ctx.args[0]), 5), 1)
+    except:
+        return
+
+    with open(f'orario/orario_{day}.jpg', 'rb') as f:
+        update.message.reply_photo(f, [f'orario {giorni[day - 1]}', None][day == 0])
+
+
+
+def burla_italiana(update, ctx):
+    reply(update, choice(ridere))
+
+
 
 def word_check(update, ctx):
     message = update.effective_message
@@ -336,6 +367,7 @@ def main():
     # COMANDI PER DIVERTIMENTO
 
     dp.add_handler(cmdh("audio",      to_audio))
+    dp.add_handler(cmdh("burla",      burla_italiana))
     dp.add_handler(cmdh("cut",        cut_audio_video))
     dp.add_handler(cmdh("earrape",    earrape))
     dp.add_handler(cmdh("loop",       loop_audio_video))
@@ -348,12 +380,13 @@ def main():
 
     # SCUOLA
 
+    dp.add_handler(cmdh("argomenti",  get_today_again))
     dp.add_handler(cmdh("class",      get_courses))
     dp.add_handler(cmdh("compiti",    compiti))
+    dp.add_handler(cmdh("orario",     orario))
     dp.add_handler(cmdh("news",       get_news_command))
     dp.add_handler(cmdh("promemoria", promemoria))
     dp.add_handler(cmdh("sacrifica",  sacrifica))
-    dp.add_handler(cmdh("today",      get_today_again))
 
 
     # ALIAS
@@ -361,6 +394,7 @@ def main():
     dp.add_handler(cmdh("h",          help))
 
     dp.add_handler(cmdh("a",          to_audio))
+    dp.add_handler(cmdh("arg",        get_today_again))
     dp.add_handler(cmdh("e",          earrape))
     dp.add_handler(cmdh("i",          image))
     dp.add_handler(cmdh("l",          loop_audio_video))
@@ -416,7 +450,7 @@ def main():
     job3.run_daily(callback = get_today,              days = (0, 1, 2, 3, 4      ), time = time(hour = 15, minute = 30))
     job4.run_daily(callback = promemoria_giornaliero, days = (0, 1, 2, 3,       6), time = time(hour = 15, minute = 40))
 
-    job5.run_repeating(callback = get_news_job,       first = 10,                   interval = timedelta(minutes  =  3))
+    job5.run_repeating(callback = get_news_job,       first = news_secs[0],         interval = timedelta(minutes  =  3))
 
     job1.start()
     job2.start()
@@ -427,7 +461,7 @@ def main():
 
     # PRENDE LE NEWS DALLA BACHECA
 
-    up.job_queue.run_repeating(callback = get_news, interval = timedelta(minutes = 3), first = 30)
+    up.job_queue.run_repeating(callback = get_news, interval = timedelta(minutes = 3), first = news_secs[1])
 
     up.start_polling()
 
