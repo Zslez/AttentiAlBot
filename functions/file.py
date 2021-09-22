@@ -200,15 +200,18 @@ def to_audio(update, ctx):
     else:
         url = ctx.args[0]
 
-    run(f'youtube-dl --max-filesize 10m -o "%(title)s.%(ext)s" --extract-audio --audio-format mp3 {url}')
+    run(f'youtube-dl --max-filesize 8m -o "%(title)s.%(ext)s" --extract-audio --audio-format mp3 {url}')
     name = run(f'youtube-dl --get-filename -o "%(title)s.%(ext)s" {url}').stdout.decode().strip()
+    name = '.'.join(name.split('.')[:-1]).split('\\')[-1] + '.mp3'
 
-    base = '.'.join(name.split('.')[:-1]).split('\\')[-1]
+    if not os.path.exists(name):
+        reply(update, 'L\'audio è troppo pesante.')
+        return
 
-    with open(base + '.mp3', 'rb') as f:
-        update.message.reply_audio(f, base + '.mp3', reply_to_message_id = msg_id)
+    with open(name, 'rb') as f:
+        update.message.reply_audio(f, name, reply_to_message_id = msg_id)
 
-    remove(base + '.mp3')
+    remove(name)
 
 
 

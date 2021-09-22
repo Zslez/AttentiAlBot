@@ -2,16 +2,23 @@ l'amenità
 l'azione giullaresca
 la battuta goliardica
 la beffa
+la bagattella
+la bazzecola
 la briosità
 il buffo
 la buffonata
 la burla
 la burla italiana
 il cabarettismo
+la canzonatura
+la caricatura
 la celia
 il colmo
 la comicità
 la commedia
+la corbellatura
+la derisione
+il dileggio
 il divertimento
 quell'espressione del volto umano che manifesta serenità, benessere e apertura nei confronti di una persona che ha espresso la sua opinione in modo fuori dal comune
 la farsa
@@ -25,17 +32,22 @@ l'ilarità
 l'inganno
 l'intrattenimento
 l'intrattenimento ilare
+l'ironia
 l'ironia arguta
+l'irrisione
 la letizia
 il lol
 la ludica affermazione
 il manifestarsi di un sentimento di allegrezza mediante modificazione del ritmo respiratorio e variazione della mimica facciale
 il meme
 il momento commediografo
+il motteggio
 la pagliacciata
 la pagliaccieria
 la parodia
+la pasquinata
 la piacevolezza
+la presa in giro
 il ridere
 la rideria
 la risata a crepapelle
@@ -45,10 +57,13 @@ le risate fragorose
 la sagacia
 la satira
 lo sbellicarsi
+la scemenza
+la sciocchezza
 lo scherno
 lo scherzo goliardico
 lo scherzo all'italiana
 lo scompisciarsi
+lo sfottò
 la sghignazzata
 la simpatia
 la smorfia
@@ -56,6 +71,7 @@ il sogghigno
 il sogghignare
 lo spasso
 la spiritosaggine
+la stupidaggine
 il trabocchetto
 il troll
 l'umorismo

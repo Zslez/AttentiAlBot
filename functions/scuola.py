@@ -76,9 +76,15 @@ def format_data(ctx, days):
 
 
 def get_today(ctx, update = False):
-    data, default = format_data(ctx, 0)
     session = argoscuolanext.Session(codice_scuola, uname, passw)
-    arg = session.oggi(data)
+    default = True
+
+    if update:
+        data, default = format_data(ctx, 0)
+        arg = session.oggi(data)
+    else:
+        arg = session.oggi()
+
     dati = arg['dati']
 
     if default:
@@ -86,7 +92,7 @@ def get_today(ctx, update = False):
     else:
         g = data.split('-')[2]
         m = mesi[data.split('-')[1]]
-        giorno = f'il {int(g)} {m[0] + m[1:].lower()}'
+        giorno = f'{int(g)} {m[0] + m[1:].lower()}'
 
     valid = {
         i['dati']['desMateria']: i['dati']['desArgomento']
@@ -94,7 +100,7 @@ def get_today(ctx, update = False):
     }
 
     if len(valid) == 0:
-        msg = f'Non ci sono novità per {giorno}\.'
+        msg = f'Non ci sono novità per il {giorno}\.'
     else:
         if default:
             msg = '*GLI ARGOMENTI DELLE LEZIONI DI OGGI*\n\n\n'

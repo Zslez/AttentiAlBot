@@ -1,11 +1,9 @@
 from telegram.ext                   import Updater, CommandHandler, MessageHandler, Filters, Defaults
 from telegram                       import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext                   import JobQueue, CallbackQueryHandler
-from logging                        import getLogger, basicConfig, DEBUG
 from datetime                       import time, timedelta
+from logging                        import getLogger
 from random                         import choice
-
-from telegram.update import Update
 
 from functions.classroom            import *
 from functions.heroku               import *
@@ -25,7 +23,6 @@ import os
 
 # LOGGER
 
-basicConfig(level = DEBUG, format = '%(name)s - %(levelname)s - %(message)s')
 logger = getLogger(__name__)
 
 
@@ -257,7 +254,7 @@ def update_and_restart(update, ctx = None):
             delete(attentiallog, i)
 
         heroku3.from_key(hkey2).app(
-            ['attenti-al-bot-2', 'attenti-al-bot'][bool(hname.replace('attenti-al-bot', ''))]
+            ['attentialbot2', 'attentialbot'][bool(hname.replace('attentialbot', ''))]
         ).config().update(
             {
                 'USERS': ','.join(users),
@@ -357,6 +354,12 @@ def main():
     def cmdh(name, func):
         return CommandHandler(name, deco(func), run_async = True)
 
+    def days(*args):
+        return (0, 1, 2, 3) + tuple(args)
+
+    def time2(h, m):
+        return time(hour = h, minute = m)
+
 
     # COMANDI BASE
 
@@ -445,12 +448,12 @@ def main():
     job4.set_dispatcher(dp)
     job5.set_dispatcher(dp)
 
-    job1.run_daily(callback = update_and_restart,     days = (0, 1, 2, 3, 4, 5, 6), time = time(hour =  3, minute =  0))
-    job2.run_daily(callback = change_heroku,          days = (0, 1, 2, 3, 4, 5, 6), time = time(hour =  5, minute =  0))
-    job3.run_daily(callback = get_today,              days = (0, 1, 2, 3, 4      ), time = time(hour = 15, minute = 30))
-    job4.run_daily(callback = promemoria_giornaliero, days = (0, 1, 2, 3,       6), time = time(hour = 15, minute = 40))
+    job1.run_daily(callback = update_and_restart,     days = days(4, 5, 6), time = time2( 3,  0))
+    job2.run_daily(callback = change_heroku,          days = days(4, 5, 6), time = time2( 5,  0))
+    job3.run_daily(callback = get_today,              days = days(4),       time = time2(15, 30))
+    job4.run_daily(callback = promemoria_giornaliero, days = days(6),       time = time2(15, 40))
 
-    job5.run_repeating(callback = get_news_job,       first = news_secs[0],         interval = timedelta(minutes  =  3))
+    job5.run_repeating(callback = get_news_job, first = news_secs[0], interval = timedelta(minutes = 3))
 
     job1.start()
     job2.start()
