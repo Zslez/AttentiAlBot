@@ -2,7 +2,6 @@
 
 *PER SCUOLA*
 ‣ /argomenti \(alias /arg\)
-‣ /class \(alias /cl\)
 ‣ /compiti \(alias /c\)
 ‣ /news \(alias /n\)
 ‣ /promemoria \(alias /p\)
@@ -20,6 +19,6 @@
 ‣ /video \(alias /v\)
 
 *ALTRO*
+‣ /burla \(alias /b\)
 ‣ /help \(alias /h\)
-‣ /ridere
 ‣ /start

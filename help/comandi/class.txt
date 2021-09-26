@@ -1,3 +1,0 @@
-*/class*
-
-Restituisce la lista delle classi a cui siamo iscritti, con la quali si può interagire con i pulsanti sotto il messaggio chiedendo gli ultimi annunci e compiti

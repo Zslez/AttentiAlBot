@@ -1,16 +1,16 @@
 from telegram.ext                   import Updater, CommandHandler, MessageHandler, Filters, Defaults
-from telegram                       import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext                   import JobQueue, CallbackQueryHandler
 from datetime                       import time, timedelta
 from logging                        import getLogger
 from random                         import choice
 
-from functions.classroom            import *
 from functions.heroku               import *
 from functions.scuola               import *
 from functions.utils                import *
 from functions.file                 import *
 from functions.news                 import *
+
+from help                           import *
 
 import globals
 
@@ -37,14 +37,6 @@ globals.hnews = None if globals.name else os.environ['NEWS']
 with open('start.txt', encoding = 'utf-8') as f:
     start_text = f.read().strip()
 
-privata      = 781455352            # il mio ID Telegram
-gruppo       = -1001261320605       # l'ID del gruppo
-news_channel = -1001568629792       # l'ID del canale delle news
-attentiallog = -1001533648966       # l'ID del canale delle notifiche che uso per risolvere gli errori
-
-users = [str(privata)] if globals.name else os.environ['USERS'].split(',')
-intusers = [int(i) for i in users]
-
 news_secs = (1000, 3000) if globals.name else (10, 30)
 
 with open('burla.txt', encoding = 'utf-8') as f:
@@ -56,39 +48,6 @@ giorni = [
     'mercoledì',
     'giovedì',
     'venerdì'
-]
-
-
-# lista dei comandi del Bot dei quali è possibile vedere la spiegazione con /help
-
-comandi = [
-    # comandi per scuola
-    [
-        'argomenti',
-        'class',
-        'compiti',
-        'news',
-        'sacrifica',
-        'promemoria'
-    ],
-    # altri comandi
-    [
-        'audio',
-        'cut',
-        'earrape',
-        'image',
-        'loop',
-        'reverse',
-        'speed',
-        'speedpitch',
-        'video'
-    ]
-]
-
-
-comandi_per_tutti = [
-    'start',
-    'help'
 ]
 
 
@@ -111,7 +70,7 @@ def start(update, ctx):
             '\n\n' + start_text + f'''\n\n\n*ATTENZIONE*
 per sapere se ci sono errori e per capire come correggerli, \
 [inoltro in un canale privato il testo di tutti i comandi usati]\
-(https://github.com/Zslez/AttentiAlBot/blob/master/main.py#L{globals.lineno}), quindi, \
+(https://github.com/Zslez/AttentiAlBot/blob/master/help.py#L{globals.lineno}), quindi, \
 *NON* inviare mai dati sensibili al Bot quando usi un comando, anche perché *non è mai necessario farlo*\.
 Di conseguenza, non mi prendo alcuna responsabilità per questo tipo di _incidenti_\.
 Dato che ancora ogni tanto escono fuori cose da sistemare, \
@@ -119,115 +78,6 @@ per ora rimane così, poi credo toglierò questa cosa\.'''
         ][update.message.chat.id != gruppo],
         markdown = 2
     )
-
-
-
-# funzione help con i vari buttons per le info
-
-@private_deco
-def help(update, ctx):
-    keyboard = help_keyboard()
-
-    markup = InlineKeyboardMarkup(keyboard)
-
-    if ctx._chat_id_and_data[0] == gruppo:
-        update.message.delete()
-        ctx.bot.send_message(update.message.from_user.id, 'Su cosa ti serve aiuto?', reply_markup = markup)
-        return
-
-    update.message.reply_markdown(text = 'Su cosa ti serve aiuto?', reply_markup = markup)
-
-
-def help_keyboard():
-    return [
-        [InlineKeyboardButton('INFO', callback_data = 'null')],
-        [
-            InlineKeyboardButton('lista comandi', callback_data = 'help_lista'),
-            InlineKeyboardButton('formati data', callback_data = 'help_data')
-        ],
-        [InlineKeyboardButton('COMANDI SCUOLA', callback_data = 'null')]
-    ] + [
-        [InlineKeyboardButton(i, callback_data = f'help_{i}') for i in j] for j in chunks(comandi[0], 3)
-    ] + [
-        [InlineKeyboardButton('ALTRI COMANDI', callback_data = 'null')]
-    ] + [
-        [InlineKeyboardButton(i, callback_data = f'help_{i}') for i in j] for j in chunks(comandi[1], 3)
-    ] + [
-        [InlineKeyboardButton('🗑️', callback_data = 'delete')]
-    ]
-
-
-# handler che viene chiamato quando vengono premuti i buttons del comando help
-
-def help_callback(update, ctx):
-    data = update.callback_query['data'].split('_')[-1]
-    msg = update.callback_query.message
-
-    if data == 'back':
-        msg.edit_text(
-            'Su cosa ti serve aiuto?',
-            reply_markup = InlineKeyboardMarkup(help_keyboard()),
-            parse_mode = 'markdownv2'
-        )
-
-    elif data in ('lista', 'data'):
-        with open(f'help/{data}.txt', encoding = 'utf-8') as f:
-            msg.edit_text(
-                f.read(),
-                reply_markup = InlineKeyboardMarkup([
-                    [InlineKeyboardButton('indietro', callback_data = 'help_back')]
-                ]),
-                parse_mode = 'markdownv2'
-            )
-
-    else:
-        for i in comandi[0] + comandi[1]:
-            if data == i:
-                with open(f'help/comandi/{i}.txt', encoding = 'utf-8') as f:
-                    msg.edit_text(
-                        f.read(),
-                        reply_markup = InlineKeyboardMarkup([
-                            [InlineKeyboardButton('indietro', callback_data = 'help_back')]
-                        ]),
-                        parse_mode = 'markdownv2'
-                    )
-
-    return ctx.bot.answer_callback_query(update.callback_query['id'])
-
-
-
-def deco(func):
-    def new_func(update, ctx):
-        message = update.message
-        uid = message.from_user.id
-        uname = message.from_user.first_name
-
-
-        # se chi usa il comando non sono io
-
-        if uid != privata:
-            send(
-                attentiallog,
-                'USER ID: ' + str(uid) + \
-                '\nUSER NAME: ' + uname + \
-                f'\nREGISTRATO: {uid in intusers}' + \
-                '\nCOMANDO:\n' + message.text.replace('@AttentiAlGruppoBot', '')
-            )
-
-
-        # se chi usa il comando non è nella lista di chi può usare il Bot
-
-        if uid not in intusers:
-            if message.chat_id != gruppo and func.__name__ not in comandi_per_tutti:
-                send(uid, 'Invia prima un messaggio nel gruppo, così so che fai parte della classe\.')
-                return
-            else:
-                users.append(str(uid))
-                intusers.append(uid)
-
-        func(update, ctx)
-
-    return new_func
 
 
 
@@ -243,7 +93,7 @@ def get_users(update, ctx):
 
 
 
-def get_today_again(update, ctx):
+def argomenti(update, ctx):
     get_today(ctx, update)
 
 
@@ -383,8 +233,7 @@ def main():
 
     # SCUOLA
 
-    dp.add_handler(cmdh("argomenti",  get_today_again))
-    dp.add_handler(cmdh("class",      get_courses))
+    dp.add_handler(cmdh("argomenti",  argomenti))
     dp.add_handler(cmdh("compiti",    compiti))
     dp.add_handler(cmdh("orario",     orario))
     dp.add_handler(cmdh("news",       get_news_command))
@@ -397,7 +246,8 @@ def main():
     dp.add_handler(cmdh("h",          help))
 
     dp.add_handler(cmdh("a",          to_audio))
-    dp.add_handler(cmdh("arg",        get_today_again))
+    dp.add_handler(cmdh("arg",        argomenti))
+    dp.add_handler(cmdh("b",          burla_italiana))
     dp.add_handler(cmdh("e",          earrape))
     dp.add_handler(cmdh("i",          image))
     dp.add_handler(cmdh("l",          loop_audio_video))
@@ -406,7 +256,6 @@ def main():
     dp.add_handler(cmdh("sp",         speed_pitch_audio_video))
     dp.add_handler(cmdh("v",          to_video))
 
-    dp.add_handler(cmdh("cl",         get_courses))
     dp.add_handler(cmdh("c",          compiti))
     dp.add_handler(cmdh("n",          get_news_command))
     dp.add_handler(cmdh("p",          promemoria))
@@ -421,10 +270,6 @@ def main():
     # ALTRI HANDLER
 
     dp.add_handler(MessageHandler(Filters.text, word_check))
-
-    dp.add_handler(CallbackQueryHandler(courses_callback_choice,    pattern = '^classchoice_'))
-    dp.add_handler(CallbackQueryHandler(courses_callback_work,      pattern = '^classwork_'))
-    dp.add_handler(CallbackQueryHandler(courses_callback_ann,       pattern = '^classann_'))
 
     dp.add_handler(CallbackQueryHandler(callback_delete,            pattern = '^delete'))
     dp.add_handler(CallbackQueryHandler(callback_null,              pattern = '^null'))
@@ -450,8 +295,8 @@ def main():
 
     job1.run_daily(callback = update_and_restart,     days = days(4, 5, 6), time = time2( 3,  0))
     job2.run_daily(callback = change_heroku,          days = days(4, 5, 6), time = time2( 5,  0))
-    job3.run_daily(callback = get_today,              days = days(4),       time = time2(15, 30))
-    job4.run_daily(callback = promemoria_giornaliero, days = days(6),       time = time2(15, 40))
+    job3.run_daily(callback = get_today,              days = days(4),       time = time2(15, 25))
+    job4.run_daily(callback = promemoria_giornaliero, days = days(6),       time = time2(15, 30))
 
     job5.run_repeating(callback = get_news_job, first = news_secs[0], interval = timedelta(minutes = 3))
 

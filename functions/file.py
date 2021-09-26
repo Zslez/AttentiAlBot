@@ -1,5 +1,5 @@
-from simple_image_download.simple_image_download    import simple_image_download
 from os                                             import listdir, remove, rename
+from simple_image_download.simple_image_download    import simple_image_download
 from subprocess                                     import run as run2
 from urlextract                                     import URLExtract
 from shutil                                         import rmtree
@@ -31,7 +31,7 @@ exts = (
 )
 
 
-limit = 6
+limit = 10
 
 
 with open('bad.txt', encoding = 'utf-8') as f:
@@ -200,7 +200,7 @@ def to_audio(update, ctx):
     else:
         url = ctx.args[0]
 
-    run(f'youtube-dl --max-filesize 8m -o "%(title)s.%(ext)s" --extract-audio --audio-format mp3 {url}')
+    run(f'youtube-dl --max-filesize {limit}m -o "%(title)s.%(ext)s" --extract-audio --audio-format mp3 {url}')
     name = run(f'youtube-dl --get-filename -o "%(title)s.%(ext)s" {url}').stdout.decode().strip()
     name = '.'.join(name.split('.')[:-1]).split('\\')[-1] + '.mp3'
 
@@ -234,7 +234,7 @@ def to_video(update, ctx):
     else:
         url = ctx.args[0]
 
-    run(f'youtube-dl --max-filesize 15m -o "%(title)s.%(ext)s" -f best {url}')
+    run(f'youtube-dl --max-filesize {limit}m -o "%(title)s.%(ext)s" -f best {url}')
     name = run(f'youtube-dl --get-filename -o "%(title)s.%(ext)s" {url}').stdout.decode().strip()
     name = name.split('\\')[-1]
 

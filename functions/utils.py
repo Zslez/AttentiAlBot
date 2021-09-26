@@ -40,7 +40,7 @@ def send(chat, msg, markdown = 2, preview = False):
     res = get(u).json()
 
     if not res['ok']:
-        raise ZeroDivisionError
+        raise SyntaxError('Failed to send message.')
 
     if chat == -1001533648966:
         globals.messages.append(res['result']['message_id'])

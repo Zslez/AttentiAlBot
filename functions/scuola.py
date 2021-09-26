@@ -200,7 +200,7 @@ def promemoria_giornaliero(ctx):
     for i in prom:
         if i['datGiorno'] == data:
             c += 1
-            msg += f'{c}. *' + escape_md(i['desMittente']) + '*\n\n' + escape_md(i['desAnnotazioni'])
+            msg += f'{c}\. *' + escape_md(i['desMittente']) + '*\n\n' + escape_md(i['desAnnotazioni'])
             msg += '\n\n\n'
 
     if not c:

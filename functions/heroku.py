@@ -36,7 +36,8 @@ def change_heroku(ctx):
 
     send(
         -1001533648966,
-        f'rimangono `{res}` ore su `' +  ['attentialbot', 'attentialbot2'][string] + '`\.'
+        f'rimangono `{res}` ore su `' +  ['attentialbot', 'attentialbot2'][string] + '`.',
+        1
     )
 
     if res < 100:
@@ -56,18 +57,17 @@ def get_remaining_time(email, passw):
 
     with webdriver.Chrome(options = options) as driver:
         driver.get('https://dashboard.heroku.com/account/billing')
+        wait10 = WebDriverWait(driver, 10).until
 
-        WebDriverWait(driver, 20) \
-            .until(EC.presence_of_element_located((By.ID, 'onetrust-reject-all-handler'))).click()
+        wait10(EC.presence_of_element_located((By.ID, 'onetrust-reject-all-handler'))).click()
 
         driver.find_element_by_id('email').send_keys(email)
         driver.find_element_by_id('password').send_keys(passw)
         driver.find_element_by_xpath('//*[@id="login"]/form/button').click()
 
-        WebDriverWait(driver, 10) \
-            .until(EC.presence_of_element_located((By.XPATH, '//*[@id="mfa-later"]/button'))).click()
+        wait10(EC.presence_of_element_located((By.XPATH, '//*[@id="mfa-later"]/button'))).click()
+        wait10(EC.presence_of_element_located((By.CLASS_NAME, 'account-quota-usage')))
 
-        a = WebDriverWait(driver, 30) \
-            .until(EC.presence_of_element_located((By.XPATH, '//*[@id="ember31"]/table/thead/th[1]/div/span[2]')))
+        result = driver.find_element_by_class_name('account-quota-usage').find_element_by_class_name('gray')
 
-        return float(a.text.split()[0])
+        return float(result.text.split()[0])
