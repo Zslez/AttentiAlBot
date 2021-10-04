@@ -21,6 +21,7 @@ __all__ = [
     'reply',
     'reply_callback',
     'send',
+    'send_up',
     'send_photo',
     'url',
 ]
@@ -46,6 +47,11 @@ def send(chat, msg, markdown = 2, preview = False):
         globals.messages.append(res['result']['message_id'])
 
     return res
+
+
+
+def send_up(update, msg, *args, **kwargs):
+    send(update.message.chat.id, msg, *args, **kwargs)
 
 
 

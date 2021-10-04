@@ -1,6 +1,6 @@
 from telegram           import InlineKeyboardButton, InlineKeyboardMarkup
 
-from functions.utils    import send, reply, chunks
+from functions.utils    import send, send_up, chunks
 
 import globals
 import os
@@ -103,7 +103,7 @@ def private_deco(func):
             func(update, ctx)
         except:
             user = update.message.from_user
-            reply(
+            send_up(
                 update,
                 f'Hey [{user.name}](tg://user?id={user.id}), inviami prima un messaggio in privata.',
                 1

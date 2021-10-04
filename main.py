@@ -55,7 +55,7 @@ giorni = [
 # COMANDI
 
 def start(update, ctx):
-    reply(
+    send_up(
         update,
         choice(
             [
@@ -140,7 +140,7 @@ def orario(update, ctx):
 
 
 def burla_italiana(update, ctx):
-    reply(update, choice(ridere))
+    send_up(update, choice(ridere))
 
 
 

@@ -88,7 +88,7 @@ def check_file(update, file_name, file_id, mb = limit):
     new = download_file(file_id, mb)
 
     if new == None:
-        reply(update, 'Il file è troppo pesante.')
+        send_up(update, 'Il file è troppo pesante.')
         return
 
     return file_name, new
@@ -115,6 +115,7 @@ def is_bad(query):
             return True
 
     return False
+
 
 
 def image(update, ctx, n = 1, query = None):
@@ -161,7 +162,7 @@ def earrape(update, ctx):
         try:
             update.message.reply_audio(f, file_name, reply_to_message_id = msg_id)
         except:
-            reply(update, 'Il file è troppo pesante.')
+            send_up(update, 'Il file è troppo pesante.')
 
     remove(new)
     remove(file_name)
@@ -205,7 +206,7 @@ def to_audio(update, ctx):
     name = '.'.join(name.split('.')[:-1]).split('\\')[-1] + '.mp3'
 
     if not os.path.exists(name):
-        reply(update, 'L\'audio è troppo pesante.')
+        send_up(update, 'L\'audio è troppo pesante.')
         return
 
     with open(name, 'rb') as f:
@@ -239,7 +240,7 @@ def to_video(update, ctx):
     name = name.split('\\')[-1]
 
     if not os.path.exists(name):
-        reply(update, 'Il video è troppo pesante.')
+        send_up(update, 'Il video è troppo pesante.')
         return
 
     with open(name, 'rb') as f:

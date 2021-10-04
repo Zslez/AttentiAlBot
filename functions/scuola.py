@@ -90,9 +90,9 @@ def get_today(ctx, update = False):
     if default:
         giorno = 'oggi'
     else:
-        g = data.split('-')[2]
-        m = mesi[data.split('-')[1]]
-        giorno = f'{int(g)} {m[0] + m[1:].lower()}'
+        g = int(data.split('-')[2])
+        m = mesi[data.split('-')[1]].capitalize()
+        giorno = f'{g} {m}'
 
     valid = {
         i['dati']['desMateria']: i['dati']['desArgomento']
@@ -100,27 +100,24 @@ def get_today(ctx, update = False):
     }
 
     if len(valid) == 0:
-        msg = f'Non ci sono novità per il {giorno}\.'
+        msg = f'Nessuna novità per il giorno {giorno}\.'
     else:
         if default:
-            msg = '*GLI ARGOMENTI DELLE LEZIONI DI OGGI*\n\n\n'
+            msg = '*COSA È SUCCESSO OGGI*\n\n\n'
         else:
-            msg = f'*GLI ARGOMENTI DELLE LEZIONI DEL {giorno.upper()}*\n\n\n'
+            msg = f'*COSA È SUCCESSO IL GIORNO {giorno.upper()}*\n\n\n'
 
         c = 1
 
         for k, v in valid.items():
-            msg += f'{c}\. *{escape_md(k)}*\n\n{escape_md(v)}\n\n\n'
+            msg += f'{c}\. *{escape_md(k)}*\n\n{escape_md(v)}\n\n'
             c += 1
 
 
     if not update:
-        msg = send(gruppo, msg.strip())['result']
-        chat = msg['chat']['id']
-        msg = msg['message_id']
-        pin(chat, msg)
+        send(gruppo, msg.strip())
     else:
-        reply(update, msg.strip(), markdown = 2)
+        send_up(update, msg.strip())
 
 
 
@@ -132,7 +129,7 @@ def filtra_compiti(arg, data):
         c = 1
 
         for i in result:
-            msg += f'{c}\. *{escape_md(i[0])}*\n\n{escape_md(i[1])}\n\n\n'
+            msg += f'{c}\. *{escape_md(i[0])}*\n\n{escape_md(i[1])}\n\n'
             c += 1
     else:
         msg = None
@@ -144,46 +141,38 @@ def filtra_compiti(arg, data):
 def compiti(update, ctx):
     data, default = format_data(ctx, 1)
 
-    g = data.split('-')[2]
-    m = mesi[data.split('-')[1]]
-    giorno = f'{int(g)} {m[0] + m[1:].lower()}'
+    g = int(data.split('-')[2])
+    m = mesi[data.split('-')[1]].capitalize()
+    gio = f'{g} {m}'
 
     session = argoscuolanext.Session("SS16383", uname, passw)
     arg = session.compiti()
 
     if not (msg := filtra_compiti(arg, data)):
         if default:
-            msg = f'Non ci sono compiti per i prossimi 6 giorni\.'
+            msg = f'Nessun compito per i prossimi 6 giorni\.'
         else:
-            msg = f'Non ci sono compiti per il {giorno} e per i 5 giorni successivi\.'
-
-        altro = ''
+            msg = f'Nessun compito per il giorno {gio} e per i 5 successivi\.'
 
         for _ in range(5):
             data = (datetime.strptime(data, '%Y-%m-%d') + timedelta(days = 1)).strftime('%Y-%m-%d')
 
-            if not (msg_2 := filtra_compiti(arg, data)):
+            if not (msg := filtra_compiti(arg, data)):
                 continue
 
-            g = data.split('-')[2]
+            g = int(data.split('-')[2])
             m = mesi[data.split('-')[1]]
 
             if default:
-                altro = f'*I PROSSIMI COMPITI SONO PER IL {int(g)} {m}*\n\n\n' + msg_2
+                msg = f'Nessun compito per domani\.\n\n\n*COMPITI PER {g} {m}*\n\n\n{msg}'
             else:
-                altro = f'*I COMPITI PIÙ VICINI SONO PER IL {int(g)} {m}*\n\n\n' + msg_2
+                msg = f'Nessun compito per il giorno {gio}\.\n\n\n*COMPITI PER {g} {m}*\n\n\n{msg}'
 
             break
-
-        if altro:
-            if default:
-                msg = f'Non ci sono compiti per domani\.\n\n\n' + altro
-            else:
-                msg = f'Non ci sono compiti per il {giorno}\.\n\n\n' + altro
     else:
-        msg = f'*COMPITI PER IL {int(g)} {m}*\n\n\n' + msg
+        msg = f'*COMPITI PER {g} {m.upper()}*\n\n\n' + msg
 
-    reply(update, msg, markdown = 2)
+    send_up(update, msg)
 
 
 
@@ -192,16 +181,15 @@ def promemoria_giornaliero(ctx):
     session = argoscuolanext.Session("SS16383", uname, passw)
     prom = session.promemoria()['dati']
 
-    g = data.split('-')[2]
+    g = int(data.split('-')[2])
     m = mesi[data.split('-')[1]]
-    msg = f'*PROMEMORIA {int(g)} {m}*\n\n\n'
+    msg = f'*PROMEMORIA {g} {m}*\n'
     c = 0
 
     for i in prom:
         if i['datGiorno'] == data:
             c += 1
-            msg += f'{c}\. *' + escape_md(i['desMittente']) + '*\n\n' + escape_md(i['desAnnotazioni'])
-            msg += '\n\n\n'
+            msg += f'\n\n{c}\. *' + escape_md(i['desMittente']) + '*\n\n' + escape_md(i['desAnnotazioni'])
 
     if not c:
         return
@@ -216,24 +204,23 @@ def promemoria(update, ctx):
     session = argoscuolanext.Session("SS16383", uname, passw)
     prom = session.promemoria()['dati']
 
-    g = data.split('-')[2]
+    g = int(data.split('-')[2])
     m = mesi[data.split('-')[1]]
-    msg = f'*PROMEMORIA {int(g)} {m}*\n\n\n'
+    msg = f'*PROMEMORIA {g} {m}*\n'
     c = 0
 
     for i in prom:
         if i['datGiorno'] == data:
             c += 1
-            msg += f'{c}\. *' + escape_md(i['desMittente']) + '*\n\n' + escape_md(i['desAnnotazioni'])
-            msg += '\n\n\n'
+            msg += f'\n\n{c}\. *' + escape_md(i['desMittente']) + '*\n\n' + escape_md(i['desAnnotazioni'])
 
     if not c:
         if default:
-            msg = 'Non ci sono promemoria per domani\.'
+            msg = 'Nessun promemoria per domani\.'
         else:
-            msg = f'Non ci sono promemoria per il {int(g)} {m.lower()}\.'
+            msg = f'Nessun promemoria per il giorno {g} {m.lower()}\.'
 
-    reply(update, msg, markdown = 2)
+    send_up(update, msg)
 
 
 
@@ -254,16 +241,4 @@ def sacrifica(update, ctx):
         res += choice + '\n'
         del classe[choice]
 
-    reply(update, res)
-
-
-
-
-
-# BETA
-
-def bacheca():
-    session = argoscuolanext.Session("SS16383", uname, passw)
-    arg = session.bacheca()['dati']
-    print(json.dumps(arg, indent=4))
-    del session
+    send_up(update, res, 0)

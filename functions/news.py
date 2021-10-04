@@ -10,7 +10,7 @@ from time                                                   import sleep
 from requests                                               import get
 from selenium.webdriver.common.by                           import By
 
-from .utils                                                 import reply, send, escape_md, send_photo
+from .utils                                                 import send_up, send, escape_md, send_photo
 
 import os
 
@@ -263,7 +263,7 @@ def get_news_command(update, ctx):
 
     text, images = get_news_website(num)
 
-    reply(update, text, 2)
+    send_up(update, text)
 
     if images:
         for i in images:
