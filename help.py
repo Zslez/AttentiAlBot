@@ -67,19 +67,6 @@ def deco(func):
     def new_func(update, ctx):
         message = update.message
         uid = message.from_user.id
-        uname = message.from_user.first_name
-
-
-        # se chi usa il comando non sono io
-
-        if uid != privata:
-            send(
-                attentiallog,
-                'USER ID: ' + str(uid) + \
-                '\nUSER NAME: ' + uname + \
-                f'\nREGISTRATO: {uid in intusers}' + \
-                '\nCOMANDO:\n' + message.text.replace('@AttentiAlGruppoBot', '')
-            )
 
 
         # se chi usa il comando non è nella lista di chi può usare il Bot
@@ -122,10 +109,8 @@ def help(update, ctx):
 
     if ctx._chat_id_and_data[0] == gruppo:
         update.message.delete()
-        ctx.bot.send_message(update.message.from_user.id, 'Su cosa ti serve aiuto?', reply_markup = markup)
-        return
 
-    update.message.reply_markdown(text = 'Su cosa ti serve aiuto?', reply_markup = markup)
+    ctx.bot.send_message(update.message.from_user.id, 'Su cosa ti serve aiuto?', reply_markup = markup)
 
 
 def help_keyboard():
@@ -135,14 +120,10 @@ def help_keyboard():
             InlineKeyboardButton('lista comandi', callback_data = 'help_lista'),
             InlineKeyboardButton('formati data', callback_data = 'help_data')
         ],
-        [InlineKeyboardButton('COMANDI SCUOLA', callback_data = 'null')]
-    ] + [
-        [InlineKeyboardButton(i, callback_data = f'help_{i}') for i in j] for j in chunks(comandi[0], 3)
-    ] + [
-        [InlineKeyboardButton('ALTRI COMANDI', callback_data = 'null')]
-    ] + [
-        [InlineKeyboardButton(i, callback_data = f'help_{i}') for i in j] for j in chunks(comandi[1], 3)
-    ] + [
+        [InlineKeyboardButton('COMANDI SCUOLA', callback_data = 'null')],
+        *[[InlineKeyboardButton(i, callback_data = f'help_{i}') for i in j] for j in chunks(comandi[0], 3)],
+        [InlineKeyboardButton('ALTRI COMANDI', callback_data = 'null')],
+        *[[InlineKeyboardButton(i, callback_data = f'help_{i}') for i in j] for j in chunks(comandi[1], 3)],
         [InlineKeyboardButton('🗑️', callback_data = 'delete')]
     ]
 
@@ -165,7 +146,8 @@ def help_callback(update, ctx):
             msg.edit_text(
                 f.read(),
                 reply_markup = InlineKeyboardMarkup([
-                    [InlineKeyboardButton('indietro', callback_data = 'help_back')]
+                    [InlineKeyboardButton('indietro', callback_data = 'help_back')],
+                    [InlineKeyboardButton('🗑️', callback_data = 'delete')]
                 ]),
                 parse_mode = 'markdownv2'
             )
@@ -177,7 +159,8 @@ def help_callback(update, ctx):
                     msg.edit_text(
                         f.read(),
                         reply_markup = InlineKeyboardMarkup([
-                            [InlineKeyboardButton('indietro', callback_data = 'help_back')]
+                            [InlineKeyboardButton('indietro', callback_data = 'help_back')],
+                            [InlineKeyboardButton('🗑️', callback_data = 'delete')]
                         ]),
                         parse_mode = 'markdownv2'
                     )

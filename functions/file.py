@@ -118,19 +118,15 @@ def is_bad(query):
 
 
 
-def image(update, ctx, n = 1, query = None):
-    if not query:
-        args = ctx.args
-    else:
-        args = query.split()
-
+def image(update, ctx):
+    args = ctx.args
     query = '_'.join(args)
 
     if is_bad(query):
         update.message.delete()
         return
 
-    download(' '.join(args), n)
+    download(' '.join(args), 1)
 
     with open(f'simple_images/{query}/' + listdir(f'simple_images/{query}')[-1], 'rb') as f:
         ctx.bot.send_photo(ctx._chat_id_and_data[0], photo = f)
@@ -199,10 +195,15 @@ def to_audio(update, ctx):
         if not url:
             return
     else:
-        url = ctx.args[0]
+        if not (url := extract(' '.join(ctx.args))):
+            return
 
-    run(f'youtube-dl --max-filesize {limit}m -o "%(title)s.%(ext)s" --extract-audio --audio-format mp3 {url}')
-    name = run(f'youtube-dl --get-filename -o "%(title)s.%(ext)s" {url}').stdout.decode().strip()
+        url = url[0]
+
+    title = '"%(title)s.%(ext)s"'
+
+    run(f'youtube-dl --max-filesize {limit}m -o {title} --extract-audio --audio-format mp3 {url}')
+    name = run(f'youtube-dl --get-filename -o {title} {url}').stdout.decode().strip()
     name = '.'.join(name.split('.')[:-1]).split('\\')[-1] + '.mp3'
 
     if not os.path.exists(name):
@@ -231,9 +232,14 @@ def to_video(update, ctx):
         if 'text' not in reply_msg:
             return
 
-        url = extract(reply_msg['text'])[0]
+        url = extract(reply_msg['text'])
     else:
-        url = ctx.args[0]
+        url = extract(' '.join(ctx.args))
+
+    if not url:
+        return
+
+    url = url[0]
 
     run(f'youtube-dl --max-filesize {limit}m -o "%(title)s.%(ext)s" -f best {url}')
     name = run(f'youtube-dl --get-filename -o "%(title)s.%(ext)s" {url}').stdout.decode().strip()
@@ -319,9 +325,9 @@ def reverse_audio_video(update, ctx):
             f'-of default=noprint_wrappers=1:nokey=1 "{new}"'
 
         if float(run(cmd).stdout.decode()) > 8:
-            update.message.reply_markdown(
-                'Al momento non è possibile fare il reverse di video troppo lunghi ' \
-                'perché richede più memoria di quella che mi viene concessa dal server. 😔'
+            send_up(
+                update,
+                'Video troppo lungo per il reverse 😔'
             )
 
             remove(new)

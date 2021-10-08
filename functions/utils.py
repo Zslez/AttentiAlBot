@@ -17,9 +17,6 @@ __all__ = [
     'download_file',
     'escape_md',
     'get_reply',
-    'pin',
-    'reply',
-    'reply_callback',
     'send',
     'send_up',
     'send_photo',
@@ -41,7 +38,7 @@ def send(chat, msg, markdown = 2, preview = False):
     res = get(u).json()
 
     if not res['ok']:
-        raise SyntaxError('Failed to send message.')
+        raise SyntaxError(f'Failed to send message {msg}.')
 
     if chat == -1001533648966:
         globals.messages.append(res['result']['message_id'])
@@ -81,31 +78,8 @@ def send_photo(chat, photo, msg = None, markdown = None, preview = False):
 
 
 
-def reply(update, msg, markdown = 0, preview = False):
-    if not markdown:
-        return update.message.reply_text(msg.strip(), disable_web_page_preview = not preview)
-
-    if markdown == 1:
-        return update.message.reply_markdown(msg.strip(), disable_web_page_preview = not preview)
-
-    return update.message.reply_markdown_v2(msg.strip(), disable_web_page_preview = not preview)
-
-
-
-def reply_callback(update, msg):
-    update.callback_query.message.reply_markdown(msg.strip(), disable_web_page_preview = True)
-
-
-
 def delete(chat_id, msg_id):
     get(url + f'deleteMessage?chat_id={chat_id}&message_id={msg_id}')
-
-
-
-def pin(chat_id, msg_id):
-    get(url + f'pinChatMessage?chat_id={chat_id}&message_id={msg_id}')
-
-
 
 
 

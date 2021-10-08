@@ -167,10 +167,11 @@ def get_news_website(num, last = None):
 
     req = bs(get(url).content, 'html.parser')
 
-    last_news = req.find('div', {'class': f'views-row-{(num - 1) % 11 + 1}'}).find_all('span', {'class': 'field-content'})
+    last_news = req.find('div', {'class': f'views-row-{(num - 1) % 11 + 1}'}) \
+        .find_all('span', {'class': 'field-content'})
 
-    news_title = last_news[0].text
-    date, type = last_news[1].text.strip().split(' - ')
+    news = last_news[0].text
+    type = last_news[1].text.strip().split(' - ')[1]
 
 
     # OTTIENE L'URL DELL'ARTICOLO
@@ -206,7 +207,7 @@ def get_news_website(num, last = None):
         send(-1001533648966, f'WARNING: Il tipo di post sul sito è nuovo:\n{type}')
         return
 
-    title = f'[*{num} SUL SITO DELLA SCUOLA*]({last_news_url})\n\n*DATA:*\n' + date
+    title = f'[*{num} SUL SITO DELLA SCUOLA*]({last_news_url})\n'
 
     fields = req2.find_all('div', {'class': 'field-item even'})
 
@@ -228,8 +229,10 @@ def get_news_website(num, last = None):
             ).strip() + '\n'
         else:
             temptext = [
-                '[' + escape_md(j.text) + '](' + format_url(j['href']) + ')' if j.has_attr('href') else escape_md(j.text.strip())
-                for j in i.find_all(['p', 'a']) if j.parent.name != 'a' and not j.find('a') and j.text.strip()
+                '[' + escape_md(j.text) + '](' + format_url(j['href']) + ')'
+                if j.has_attr('href') else escape_md(j.text.strip())
+                for j in i.find_all(['p', 'a'])
+                if j.parent.name != 'a' and not j.find('a') and j.text.strip()
             ]
 
             images = [j.strip().replace('[](', '')[:-1] for j in temptext if '[]' in i]
@@ -246,14 +249,14 @@ def get_news_website(num, last = None):
     # ESTRAE TUTTI GLI ALLEGATI SE CE NE SONO
 
     if attachments:
-        attachments_text = '\n*ALLEGATI:*\n'
+        att_text = '\n*ALLEGATI:*\n'
 
         for i in attachments[0].find_all('a'):
-            attachments_text += ' ‣ [' + escape_md(i.text) + '](' + i['href'] + ')\n'
+            att_text += ' ‣ [' + escape_md(i.text) + '](' + i['href'] + ')\n'
     else:
-        attachments_text = ''
+        att_text = ''
 
-    return f'{title}\n\n*TIPO:*\n{type}\n\n*OGGETTO:*\n{escape_md(news_title)}\n{text}\n{attachments_text}', images
+    return f'{title}\n\n*TIPO:*\n{type}\n\n*OGGETTO:*\n{escape_md(news)}\n{text}\n{att_text}', images
 
 
 

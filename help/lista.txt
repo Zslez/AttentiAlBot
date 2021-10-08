@@ -4,6 +4,7 @@
 ‣ /argomenti \(alias /arg\)
 ‣ /compiti \(alias /c\)
 ‣ /news \(alias /n\)
+‣ /orario \(alias /o\)
 ‣ /promemoria \(alias /p\)
 ‣ /sacrifica
 
@@ -22,3 +23,4 @@
 ‣ /burla \(alias /b\)
 ‣ /help \(alias /h\)
 ‣ /start
+‣ /tivogliobenecristiano

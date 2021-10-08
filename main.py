@@ -64,18 +64,7 @@ def start(update, ctx):
                 'Привет',
                 'ちわっす',
                 '嘿'
-            ]
-        ) + [
-            '',
-            '\n\n' + start_text + f'''\n\n\n*ATTENZIONE*
-per sapere se ci sono errori e per capire come correggerli, \
-[inoltro in un canale privato il testo di tutti i comandi usati]\
-(https://github.com/Zslez/AttentiAlBot/blob/master/help.py#L{globals.lineno}), quindi, \
-*NON* inviare mai dati sensibili al Bot quando usi un comando, anche perché *non è mai necessario farlo*\.
-Di conseguenza, non mi prendo alcuna responsabilità per questo tipo di _incidenti_\.
-Dato che ancora ogni tanto escono fuori cose da sistemare, \
-per ora rimane così, poi credo toglierò questa cosa\.'''
-        ][update.message.chat.id != gruppo],
+            ]) + ['', '\n\n' + start_text][update.message.chat.id != gruppo],
         markdown = 2
     )
 
@@ -144,6 +133,11 @@ def burla_italiana(update, ctx):
 
 
 
+def grazie(update, ctx):
+    send_up(update, '❤️')
+
+
+
 def word_check(update, ctx):
     message = update.effective_message
     text = message.text.lower()
@@ -182,15 +176,6 @@ def word_check(update, ctx):
 # così posso capire cosa non va
 
 def error(update, ctx):
-    try:
-        send(
-            attentiallog,
-            f'*UPDATE:*\n```\n{escape_md(json.dumps(update.effective_message.to_dict(), indent = 4))}```' \
-                f'\n\n*ERROR:*\n{escape_md(str(ctx.error))}'
-        )
-    except:
-        send(attentiallog, f'*ERROR:*\n{str(ctx.error)}', 1)
-
     logger.warning('Update "%s" caused error "%s"', update, ctx.error)
 
 
@@ -213,8 +198,9 @@ def main():
 
     # COMANDI BASE
 
-    dp.add_handler(cmdh("help",       help))
-    dp.add_handler(cmdh("start",      start))
+    dp.add_handler(cmdh("tivogliobenecristiano", grazie))
+    dp.add_handler(cmdh("help",                  help))
+    dp.add_handler(cmdh("start",                 start))
 
 
     # COMANDI PER DIVERTIMENTO
@@ -251,6 +237,7 @@ def main():
     dp.add_handler(cmdh("e",          earrape))
     dp.add_handler(cmdh("i",          image))
     dp.add_handler(cmdh("l",          loop_audio_video))
+    dp.add_handler(cmdh("o",          orario))
     dp.add_handler(cmdh("r",          reverse_audio_video))
     dp.add_handler(cmdh("s",          speed_audio_video))
     dp.add_handler(cmdh("sp",         speed_pitch_audio_video))
@@ -271,10 +258,10 @@ def main():
 
     dp.add_handler(MessageHandler(Filters.text, word_check))
 
-    dp.add_handler(CallbackQueryHandler(callback_delete,            pattern = '^delete'))
-    dp.add_handler(CallbackQueryHandler(callback_null,              pattern = '^null'))
+    dp.add_handler(CallbackQueryHandler(callback_delete, pattern = '^delete'))
+    dp.add_handler(CallbackQueryHandler(callback_null,   pattern = '^null'))
 
-    dp.add_handler(CallbackQueryHandler(help_callback,              pattern = '^help_'))
+    dp.add_handler(CallbackQueryHandler(help_callback,   pattern = '^help_'))
 
     dp.add_error_handler(error)
 

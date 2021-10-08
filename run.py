@@ -10,9 +10,6 @@ with open('classe.json', 'w') as f:
 
 import globals
 
-with open('help.py', encoding = 'utf-8') as f:
-    globals.lineno = f.readlines().index('def deco(func):\n') + 1
-
 globals.name = False
 
 
