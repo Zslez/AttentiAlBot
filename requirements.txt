@@ -1,15 +1,11 @@
 -e git+https://github.com/julian-r/python-magic.git#egg=python-magic-bin
 requests==2.25.1
 
-google-api-python-client==1.7.9
-google-auth-httplib2==0.0.3
-google-auth-oauthlib==0.4.0
 simple-image-download==0.4
 python-telegram-bot==13.7
 argoscuolanext==2.0.1
 beautifulsoup4==4.9.3
 youtube-dl==2021.6.6
-google-auth==2.0.2
 urlextract==1.2.0
 selenium==3.141.0
 heroku3==4.2.3

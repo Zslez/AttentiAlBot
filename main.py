@@ -16,7 +16,6 @@ import globals
 
 import heroku3
 import pytz
-import json
 import os
 
 
@@ -164,7 +163,7 @@ def word_check(update, ctx):
             update.message.reply_video(f, 'quando_sborri.mp4',
                 caption = '🎵turuturù turuturù turuturù🎵\n🎵turutututurutu turutu tù!🎵')
             return
-    elif ('interroga' in txtspl or 'interroga?' in text) and 'non' not in txtspl and 'nn' not in txtspl:
+    elif 'interroga' in txtspl and not any(i in txtspl for i in ['non', 'nn', '?']):
         with open('video/Directed_by_Robert_Weide.mp4', 'rb') as f:
             update.message.reply_video(f, 'Directed_by_Robert_Weide.mp4',
                 caption = '🎵pom pom pom, turuturutturù, turù turù🎵\n🎵turù tuturuturutturù, turù IIIH🎵')
@@ -172,8 +171,6 @@ def word_check(update, ctx):
 
 
 # handler per gli errori per non far crashare tutto
-# prova ad inviarmi un log dell'errore su un canale privato,
-# così posso capire cosa non va
 
 def error(update, ctx):
     logger.warning('Update "%s" caused error "%s"', update, ctx.error)

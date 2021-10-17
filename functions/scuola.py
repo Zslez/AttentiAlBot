@@ -157,20 +157,23 @@ def compiti(update, ctx):
         for _ in range(5):
             data = (datetime.strptime(data, '%Y-%m-%d') + timedelta(days = 1)).strftime('%Y-%m-%d')
 
-            if not (msg := filtra_compiti(arg, data)):
+            if not (msg_2 := filtra_compiti(arg, data)):
                 continue
 
             g = int(data.split('-')[2])
             m = mesi[data.split('-')[1]]
 
             if default:
-                msg = f'Nessun compito per domani\.\n\n\n*COMPITI PER {g} {m}*\n\n\n{msg}'
+                msg = f'Nessun compito per domani\.\n\n\n*COMPITI PER {g} {m}*\n\n\n{msg_2}'
             else:
-                msg = f'Nessun compito per il giorno {gio}\.\n\n\n*COMPITI PER {g} {m}*\n\n\n{msg}'
+                msg = f'Nessun compito per il giorno {gio}\.\n\n\n*COMPITI PER {g} {m}*\n\n\n{msg_2}'
 
             break
     else:
-        msg = f'*COMPITI PER {g} {m.upper()}*\n\n\n' + msg
+        if default:
+            msg = f'*COMPITI PER DOMANI*\n\n\n' + msg
+        else:
+            msg = f'*COMPITI PER {g} {m.upper()}*\n\n\n' + msg
 
     send_up(update, msg)
 
