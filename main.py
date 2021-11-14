@@ -117,13 +117,8 @@ def update_and_restart(update, ctx = None):
 
 
 def orario(update, ctx):
-    try:
-        day = 0 if len(ctx.args) == 0 else max(min(int(ctx.args[0]), 5), 1)
-    except:
-        return
-
-    with open(f'orario/orario_{day}.jpg', 'rb') as f:
-        update.message.reply_photo(f, [f'orario {giorni[day - 1]}', None][day == 0])
+    with open(f'orario/orario.jpg', 'rb') as f:
+        update.message.reply_photo(f)
 
 
 
