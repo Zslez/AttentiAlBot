@@ -65,7 +65,7 @@ def send_photo(chat, photo, msg = None, markdown = None, preview = False):
 
     if not preview:
         u += '&disable_web_page_preview=True'
-    
+
     res = get(u).json()
 
     if not res['ok']:

@@ -6,4 +6,4 @@ messages = []
 hnews = None
 
 lnu = None
-max_news = 80
+max_news = 90

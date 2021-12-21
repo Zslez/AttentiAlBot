@@ -6,8 +6,6 @@ from selenium                               import webdriver
 from selenium.webdriver.chrome.options      import Options
 from selenium.webdriver.common.by           import By
 
-from .utils                                 import send
-
 import heroku3
 import os
 
@@ -33,12 +31,6 @@ def change_heroku(ctx):
     res = get_remaining_time(hemail, hpass)
 
     string = bool(hname.replace('attentialbot', ''))
-
-    send(
-        -1001533648966,
-        f'rimangono `{res}` ore su `' +  ['attentialbot', 'attentialbot2'][string] + '`.',
-        1
-    )
 
     if res < 100:
         api = heroku3.from_key(hkey2)

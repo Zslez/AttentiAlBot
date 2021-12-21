@@ -56,14 +56,7 @@ giorni = [
 def start(update, ctx):
     send_up(
         update,
-        choice(
-            [
-                'Weilà',
-                'Hey',
-                'Привет',
-                'ちわっす',
-                '嘿'
-            ]) + ['', '\n\n' + start_text][update.message.chat.id != gruppo],
+        'Hey' + ['', '\n\n' + start_text][update.message.chat.id != gruppo],
         markdown = 2
     )
 
@@ -128,7 +121,8 @@ def burla_italiana(update, ctx):
 
 
 def grazie(update, ctx):
-    send_up(update, '❤️')
+    #send_up(update, '❤️')
+    send_up(update, '😔')
 
 
 
@@ -207,6 +201,7 @@ def main():
     dp.add_handler(cmdh("speed",      speed_audio_video))
     dp.add_handler(cmdh("speedpitch", speed_pitch_audio_video))
     dp.add_handler(cmdh("video",      to_video))
+    dp.add_handler(cmdh("voti",       analizza_voti))
 
 
     # SCUOLA

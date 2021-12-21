@@ -83,7 +83,7 @@ def get_news(ctx):
 
         for i in content:
             if i[0] == 'Oggetto':
-                ogg = f'NUOVA *{i[1][:-1].upper()}E* DALLA SCUOLA\n\n'
+                ogg = f'NUOVA *{i[1][:-1].upper()}E* SULLA BACHECA\n\n'
             elif i[0] == 'Messaggio':
                 msg = i[1] + '\n\n'
                 save = ''.join([x[0] for x in msg.split()])
@@ -125,7 +125,7 @@ def get_news(ctx):
             urls = ''
 
         if pv:
-            pv = '\n\nNOTA: c\'è da confermare presa visione.'
+            pv = '\nNOTA: c\'è da confermare presa visione.'
         else:
             pv = ''
 
@@ -201,13 +201,7 @@ def get_news_website(num, last = None):
     else:
         num = f'{num}° POST PIÙ RECENTE'
 
-    if type == 'Circolari':
-        type = type[:-1] + 'e'
-    elif type not in ['Articolo', 'Atto']:
-        send(-1001533648966, f'WARNING: Il tipo di post sul sito è nuovo:\n{type}')
-        return
-
-    title = f'[*{num} SUL SITO DELLA SCUOLA*]({last_news_url})\n'
+    title = f'[*{num} SUL SITO DELLA SCUOLA*]({last_news_url})'
 
     fields = req2.find_all('div', {'class': 'field-item even'})
 
@@ -256,7 +250,7 @@ def get_news_website(num, last = None):
     else:
         att_text = ''
 
-    return f'{title}\n\n*TIPO:*\n{type}\n\n*OGGETTO:*\n{escape_md(news)}\n{text}\n{att_text}', images
+    return f'{title}\n\n*OGGETTO:*\n{escape_md(news)}\n{text}\n{att_text}', images
 
 
 
@@ -281,8 +275,8 @@ def get_news_job(ctx):
     if result:
         text, images = result
 
-        send(-1001568629792, text)
+        send(news_channel, text)
 
         if images:
             for i in images:
-                send_photo(-1001568629792, i)
+                send_photo(news_channel, i)

@@ -1,4 +1,5 @@
 from datetime               import datetime, timedelta
+from statistics             import stdev
 
 from .utils                 import * 
 from .file                  import *
@@ -19,7 +20,8 @@ __all__ = [
     'compiti',
     'promemoria_giornaliero',
     'promemoria',
-    'sacrifica'
+    'sacrifica',
+    'analizza_voti'
 ]
 
 
@@ -245,3 +247,46 @@ def sacrifica(update, ctx):
         del classe[choice]
 
     send_up(update, res, 0)
+
+
+
+def analizza_voti(update, ctx):
+    if not (voti := [float(i) for i in ctx.args]):
+        return
+
+    if not all(0 <= i <= 10 for i in voti):
+        return
+
+    just = 15
+
+    def format_row(word, num, newlines = 1):
+        if int(num) == num:
+            num = int(num)
+
+        return '\n' * newlines + (word + ':').ljust(just) + str(num)
+
+    media = round(sum(voti) / len(voti), 2)
+
+    res = format_row('media', media, 0)
+    res += format_row('massimo', max(voti), 1)
+    res += format_row('minimo', min(voti), 1)
+
+    if media <= 2 or (media <= 3 and len(voti) > 2):
+        send_up(update, '😳')
+        return
+    elif media <= 5.5:
+        recupero = 5.5 * (len(voti) + 1) - sum(voti)
+        res += format_row('per il 5.5', recupero, 2)
+
+        if recupero >= 9:
+            send_up(update, '```\n' + escape_md(res) + ' 😳' + '```')
+            return
+
+    if media <= 6:
+        recupero = 6 * (len(voti) + 1) - sum(voti)
+        res += format_row('per il 6', recupero, 2)
+
+        if recupero >= 9:
+            res += ' 😳'
+
+    send_up(update, '```\n' + escape_md(res) + '```')
