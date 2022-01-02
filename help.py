@@ -39,8 +39,9 @@ comandi = [
         'argomenti',
         'compiti',
         'news',
+        'promemoria',
         'sacrifica',
-        'promemoria'
+        'voti'
     ],
     # altri comandi
     [

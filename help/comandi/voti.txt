@@ -1,0 +1,3 @@
+*/voti* _\[voto 1 voto2 ecc\]_
+
+Invia una veloce analisi dell'elenco di voti specificati
