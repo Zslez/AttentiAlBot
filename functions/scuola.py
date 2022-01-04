@@ -278,7 +278,7 @@ def analizza_voti(update, ctx):
         recupero = 5.5 * (len(voti) + 1) - sum(voti)
         res += format_row('per il 5.5', recupero, 2)
 
-        if recupero >= 9:
+        if recupero > 10:
             send_up(update, '```\n' + escape_md(res) + ' 😳' + '```')
             return
 
@@ -286,7 +286,7 @@ def analizza_voti(update, ctx):
         recupero = 6 * (len(voti) + 1) - sum(voti)
         res += format_row('per il 6', recupero, 2)
 
-        if recupero >= 9:
+        if recupero > 10:
             res += ' 😳'
 
     send_up(update, '```\n' + escape_md(res) + '```')

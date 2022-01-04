@@ -69,7 +69,7 @@ def send_photo(chat, photo, msg = None, markdown = None, preview = False):
     res = get(u).json()
 
     if not res['ok']:
-        raise ZeroDivisionError
+        print('\n\n', res, '\n\n')
 
     if chat == -1001533648966:
         globals.messages.append(res['result']['message_id'])
@@ -145,9 +145,9 @@ def chunks(lst, n):
 
 
 def escape_md(text):
-	chars = '_-~' + '*+=>' + '({[]})' + '|!#`.'
+    chars = '_-~' + '*+=>' + '({[]})' + '|!#`.'
 
-	for i in chars:
-		text = text.replace(i, f'\\{i}')
+    for i in chars:
+        text = text.replace(i, f'\\{i}')
 
-	return text
+    return text

@@ -1,7 +1,7 @@
 from telegram.ext                   import Updater, CommandHandler, MessageHandler, Filters, Defaults
 from telegram.ext                   import JobQueue, CallbackQueryHandler
 from datetime                       import time, timedelta
-from logging                        import getLogger
+from logging                        import getLogger#, basicConfig, DEBUG
 from random                         import choice
 
 from functions.heroku               import *
@@ -9,6 +9,8 @@ from functions.scuola               import *
 from functions.utils                import *
 from functions.file                 import *
 from functions.news                 import *
+
+from personale.musei                import *
 
 from help                           import *
 
@@ -22,6 +24,7 @@ import os
 
 # LOGGER
 
+#basicConfig(format = '%(name)s - %(levelname)s - %(message)s', level = DEBUG)
 logger = getLogger(__name__)
 
 
@@ -30,13 +33,14 @@ logger = getLogger(__name__)
 token = os.environ['TOKEN']
 
 globals.lnu = None if globals.name else os.environ['LNU']
-globals.max_news = 70 if globals.name else int(os.environ['MAXNEWS'])
+globals.max_news = 90 if globals.name else int(os.environ['MAXNEWS'])
 globals.hnews = None if globals.name else os.environ['NEWS']
 
 with open('start.txt', encoding = 'utf-8') as f:
     start_text = f.read().strip()
 
-news_secs = (1000, 3000) if globals.name else (10, 30)
+news_secs = (2000, 3000) if globals.name else ( 20,  70)
+pers_secs = (4000, 5000) if globals.name else ( 30,  50)
 
 with open('burla.txt', encoding = 'utf-8') as f:
     ridere = f.read().split('\n')
@@ -84,6 +88,8 @@ def update_and_restart(update, ctx = None):
         for i in globals.messages:
             delete(attentiallog, i)
 
+        musei = ';'.join(globals.musei.values())
+
         heroku3.from_key(hkey2).app(
             ['attentialbot2', 'attentialbot'][bool(hname.replace('attentialbot', ''))]
         ).config().update(
@@ -91,7 +97,8 @@ def update_and_restart(update, ctx = None):
                 'USERS': ','.join(users),
                 'LNU': globals.lnu,
                 'MAXNEWS': globals.max_news,
-                'NEWS': globals.hnews
+                'NEWS': globals.hnews,
+                'MUSEI': musei
             }
         )
 
@@ -100,7 +107,8 @@ def update_and_restart(update, ctx = None):
                 'USERS': ','.join(users),
                 'LNU': globals.lnu,
                 'MAXNEWS': globals.max_news,
-                'NEWS': globals.hnews
+                'NEWS': globals.hnews,
+                'MUSEI': musei
             }
         )
 
@@ -121,8 +129,9 @@ def burla_italiana(update, ctx):
 
 
 def grazie(update, ctx):
-    #send_up(update, '❤️')
-    send_up(update, '😔')
+    send_up(update, '❤️')
+    send(update.message.from_user.id, 'ti voglio bene anche io ❤️', 0)
+    #send_up(update, '😔')
 
 
 
@@ -249,6 +258,7 @@ def main():
     dp.add_handler(CallbackQueryHandler(callback_null,   pattern = '^null'))
 
     dp.add_handler(CallbackQueryHandler(help_callback,   pattern = '^help_'))
+    dp.add_handler(CallbackQueryHandler(tv_callback,     pattern = '^tv_'))
 
     dp.add_error_handler(error)
 
@@ -272,7 +282,7 @@ def main():
     job3.run_daily(callback = get_today,              days = days(4),       time = time2(15, 25))
     job4.run_daily(callback = promemoria_giornaliero, days = days(6),       time = time2(15, 30))
 
-    job5.run_repeating(callback = get_news_job, first = news_secs[0], interval = timedelta(minutes = 3))
+    job5.run_repeating(callback = get_news_job, first = news_secs[0], interval = timedelta(minutes = 7))
 
     job1.start()
     job2.start()
@@ -281,15 +291,34 @@ def main():
     job5.start()
 
 
+    # JOB PERSONALI
+
+    jobp1 = JobQueue()
+    jobp2 = JobQueue()
+    jobp3 = JobQueue()
+
+    jobp1.set_dispatcher(dp)
+    jobp2.set_dispatcher(dp)
+    jobp3.set_dispatcher(dp)
+
+    jobp1.run_daily(callback = domenica_al_museo, days = (0,),          time = time2(10,  0))
+    jobp2.run_daily(callback = stasera_in_tv,     days = days(4, 5, 6), time = time2(18,  0))
+
+    jobp3.run_repeating(callback = culture_roma, first = pers_secs[0], interval = timedelta(minutes = 14))
+
+    jobp1.start()
+    jobp2.start()
+    jobp3.start()
+
+
     # PRENDE LE NEWS DALLA BACHECA
 
-    up.job_queue.run_repeating(callback = get_news, interval = timedelta(minutes = 3), first = news_secs[1])
+    up.job_queue.run_repeating(callback = get_news, interval = timedelta(minutes = 7), first = news_secs[1])
 
     up.start_polling()
 
     print('Ready')
 
     up.idle()
-
 
 main()
