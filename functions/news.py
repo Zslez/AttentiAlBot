@@ -76,7 +76,7 @@ def get_news(ctx):
 
         bstable = bs(table.get_attribute('innerHTML'), 'html.parser')
 
-        content = [[j.strip() for j in i.text.split(': ')] for i in bstable.find_all('tr')]
+        content = [[j.strip() for j in i.text.split(': ', 1)] for i in bstable.find_all('tr')]
         files = []
         urls = []
         pv = False
@@ -107,10 +107,7 @@ def get_news(ctx):
             j.click()
             sleep(1.8)
 
-            try:
-                file = loads(dri.get_log('performance')[-1]['message'])['message']['params']['url']
-            except KeyError:
-                file = 'https://youtu.be/kw1kc2U6NmA'
+            file = loads(dri.get_log('performance')[-1]['message'])['message']['params']['url']
 
             os.mkdir('allegati')
 
