@@ -118,7 +118,7 @@ def update_and_restart(update, ctx = None):
 
 
 def orario(update, ctx):
-    with open(f'orario/orario.jpg', 'rb') as f:
+    with open(f'orario/orario.jpeg', 'rb') as f:
         update.message.reply_photo(f)
 
 
