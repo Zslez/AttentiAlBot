@@ -30,6 +30,10 @@ hemail = None if globals.name else os.environ['HEMAIL']
 def change_heroku(ctx):
     res = get_remaining_time(hemail, hpass)
 
+    if res == None:
+        print('ERRORE NELL\'OTTENERE IL TEMPO RIMANENTE SU HEROKU.')
+        return
+
     string = bool(hname.replace('attentialbot', ''))
 
     if res < 100:

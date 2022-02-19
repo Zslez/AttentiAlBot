@@ -325,10 +325,7 @@ def reverse_audio_video(update, ctx):
             f'-of default=noprint_wrappers=1:nokey=1 "{new}"'
 
         if float(run(cmd).stdout.decode()) > 8:
-            send_up(
-                update,
-                'Video troppo lungo per il reverse 😔'
-            )
+            send_up(update, 'Video troppo lungo per il reverse 😔')
 
             remove(new)
             remove(file_name)

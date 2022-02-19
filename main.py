@@ -32,15 +32,15 @@ logger = getLogger(__name__)
 
 token = os.environ['TOKEN']
 
-globals.lnu = None if globals.name else os.environ['LNU']
-globals.max_news = 90 if globals.name else int(os.environ['MAXNEWS'])
-globals.hnews = None if globals.name else os.environ['NEWS']
+globals.max_news    = 90    if globals.name else int(os.environ['MAXNEWS'])
+globals.hnews       = None  if globals.name else os.environ['NEWS']
+globals.lnu         = None  if globals.name else os.environ['LNU']
 
 with open('start.txt', encoding = 'utf-8') as f:
     start_text = f.read().strip()
 
-news_secs = (2000, 3000) if globals.name else ( 20,  70)
-pers_secs = (4000, 5000) if globals.name else ( 30,  50)
+news_secs = (2000, 3000) if globals.name else (20,  70)
+pers_secs = (4000, 5000) if globals.name else (30,  50)
 
 with open('burla.txt', encoding = 'utf-8') as f:
     ridere = f.read().split('\n')
@@ -58,23 +58,7 @@ giorni = [
 # COMANDI
 
 def start(update, ctx):
-    send_up(
-        update,
-        'Hey' + ['', '\n\n' + start_text][update.message.chat.id != gruppo],
-        markdown = 2
-    )
-
-
-
-def get_users(update, ctx):
-    if update.message.from_user.id == privata:
-        users_lst = [ctx.bot.get_chat_member(chat_id = gruppo, user_id = i).user for i in intusers]
-        send(
-            privata,
-            '\n'.join(
-                ['`' + str(i.id).ljust(15) + ' ' + i.first_name + '`' for i in users_lst]
-            )
-        )
+    send_up(update, 'Hey' + ['', '\n\n' + start_text][update.message.chat.id != gruppo])
 
 
 
@@ -131,7 +115,6 @@ def burla_italiana(update, ctx):
 def grazie(update, ctx):
     send_up(update, '❤️')
     send(update.message.from_user.id, 'ti voglio bene anche io ❤️', 0)
-    #send_up(update, '😔')
 
 
 
@@ -246,7 +229,6 @@ def main():
 
     # PER ME
 
-    dp.add_handler(cmdh("users",      get_users))
     dp.add_handler(cmdh("restart",    update_and_restart))
 
 
@@ -257,8 +239,8 @@ def main():
     dp.add_handler(CallbackQueryHandler(callback_delete, pattern = '^delete'))
     dp.add_handler(CallbackQueryHandler(callback_null,   pattern = '^null'))
 
+    dp.add_handler(CallbackQueryHandler(cp_callback,     pattern = '^(compito|promemoria)'))
     dp.add_handler(CallbackQueryHandler(help_callback,   pattern = '^help_'))
-    dp.add_handler(CallbackQueryHandler(tv_callback,     pattern = '^tv_'))
 
     dp.add_error_handler(error)
 
