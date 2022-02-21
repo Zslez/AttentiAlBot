@@ -4,6 +4,7 @@ from datetime                       import time, timedelta
 from logging                        import getLogger#, basicConfig, DEBUG
 from random                         import choice
 
+from functions.calcolatrice.calc    import *
 from functions.heroku               import *
 from functions.scuola               import *
 from functions.utils                import *
@@ -199,6 +200,7 @@ def main():
     # SCUOLA
 
     dp.add_handler(cmdh("argomenti",  argomenti))
+    dp.add_handler(cmdh("calcola",    calc))
     dp.add_handler(cmdh("compiti",    compiti))
     dp.add_handler(cmdh("orario",     orario))
     dp.add_handler(cmdh("news",       get_news_command))
@@ -223,6 +225,7 @@ def main():
     dp.add_handler(cmdh("v",          to_video))
 
     dp.add_handler(cmdh("c",          compiti))
+    dp.add_handler(cmdh("calc",       calc))
     dp.add_handler(cmdh("n",          get_news_command))
     dp.add_handler(cmdh("p",          promemoria))
 

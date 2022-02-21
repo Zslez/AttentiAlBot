@@ -125,23 +125,25 @@ def get_today(ctx, update = False):
 def compiti_promemoria(update, ctx, dati, args, tipo, days = 1, edit = False, dir = 1):
     data, default = format_data([ctx.args, ['']][edit != False], days)
     default = not (edit or not default)
-    ordays = days
+    orig_days = (days := days + 1) - 2
+    max_days = 6
 
     gio = f'{int(data.split(sep)[2])} {mesi[data.split(sep)[1]].capitalize()}'
     tipo1, tipo2 = tipo
+    c = 0
 
     if not (msg := filtra(dati, data, args)):
         dir2 = ['precedenti', 'successivi'][dir == 1]
         msg = f'Nessun {tipo1} per i'
         msg += ' prossimi 7 giorni\.' if default else f'l giorno {gio} e per i 6 {dir2}\.'
 
-        for _ in range(5):
+        for c in range(1, max_days):
             data = (datetime.strptime(data, '%Y-%m-%d') + dir * timedelta(days = 1)).strftime('%Y-%m-%d')
 
             if dir == 1:
                 days += 1
             else:
-                ordays -= 1
+                orig_days -= 1
 
             if not (msg_2 := filtra(dati, data, args)):
                 continue
@@ -160,26 +162,28 @@ def compiti_promemoria(update, ctx, dati, args, tipo, days = 1, edit = False, di
         msg = f'*{tipo2} PER DOMANI*\n\n\n' if default else f'*{tipo2} PER {gio.upper()}*\n\n\n'
         msg += msg2
 
-    mark = Markup(
-        [[
-            Button('⬅️', None, f'{tipo[0]}_-1_{ordays - 1}'),
-            Button('🗑️', None, 'delete'),
-            Button('➡️', None, f'{tipo[0]}_1_{days + 1}')
-        ]]
-    )
+    mark = [[
+        Button('⬅️', None, f'{tipo1}_-1_{orig_days}'),
+        Button('🗑️', None, 'delete'),
+        Button('➡️', None, f'{tipo1}_1_{days}')
+    ]]
+
+    if data != format_data([], 1 + c)[0]:
+        mark.append([Button('Resetta', None, f'{tipo[0]}_1_1')])
 
     if not edit:
-        ctx.bot.send_message(update.message.chat.id, msg, parse_mode = 'markdownv2', reply_markup = mark)
+        chat_id = update.message.chat.id
+        ctx.bot.send_message(chat_id, msg, parse_mode = 'markdownv2', reply_markup = Markup(mark))
     else:
-        edit.edit_text(msg, parse_mode = 'markdownv2', reply_markup = mark)
+        edit.edit_text(msg, parse_mode = 'markdownv2', reply_markup = Markup(mark))
 
 
 
 def cp_callback(update, ctx):
     tipo, dir, days = update.callback_query['data'].split('_')
-    days, dir = int(days), int(dir)
+    edit = update.callback_query.message
 
-    [compiti, promemoria][tipo == 'promemoria'](update, ctx, days, update.callback_query.message, dir)
+    [compiti, promemoria][tipo == 'promemoria'](update, ctx, int(days), edit, int(dir))
 
     return ctx.bot.answer_callback_query(update.callback_query['id'])
 
