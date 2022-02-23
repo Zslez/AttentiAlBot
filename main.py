@@ -68,6 +68,13 @@ def argomenti(update, ctx):
 
 
 
+def update(update, ctx):
+    if update.message.from_user.id == privata:
+        with open('novità.txt', encoding = 'utf-8') as f:
+            send(gruppo, f.read())
+
+
+
 def update_and_restart(update, ctx = None):
     if (ctx != None and update.message.from_user.id == privata) or ctx == None:
         for i in globals.messages:
@@ -233,6 +240,7 @@ def main():
     # PER ME
 
     dp.add_handler(cmdh("restart",    update_and_restart))
+    dp.add_handler(cmdh("update",     update))
 
 
     # ALTRI HANDLER

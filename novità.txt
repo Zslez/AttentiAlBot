@@ -1,0 +1,24 @@
+*AttentiAlBot* versione ```69.420```
+
+
+*Aggiunto comando /calcola, o /calc:*
+calcola il valore di un'espressione
+non risolve le equazioni per ora 😔\
+
+*Simboli riconosciuti:*
+```+-*/^()[]{}|```
+
+*Funzioni riconosciute:*
+```
+abs, sqrt, cbrt
+sin \(sen\), cos, tan \(tg\)
+arccos \(acos\), arcsin \(asin\), arctan \(atan\)
+csc, sec, cot
+ln, log \(Log\)```
+
+*Costanti riconosciute:*
+```
+e, pi```
+
+
+Vi prego usatelo che programmarlo mi ha fatto tirare giù i peggio santi\.

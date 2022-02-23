@@ -1,0 +1,18 @@
+*/calcola* _\[espressione\]_
+
+Calcola il valore numerico dell'esressione data \(non risolve le equazioni per ora 😔\)\.
+
+Simboli riconosciuti:
+```+-*/^()[]{}|```
+
+Funzioni riconosciute:
+```
+abs, sqrt, cbrt
+sin \(sen\), cos, tan \(tg\)
+arccos \(acos\), arcsin \(asin\), arctan \(atan\)
+csc, sec, cot
+ln, log \(Log\)```
+
+Costanti riconosciute:
+```
+e, pi```

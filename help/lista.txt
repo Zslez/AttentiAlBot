@@ -2,6 +2,7 @@
 
 *PER SCUOLA*
 ‣ /argomenti \(alias /arg\)
+‣ /calcola \(alias /calc\)
 ‣ /compiti \(alias /c\)
 ‣ /news \(alias /n\)
 ‣ /orario \(alias /o\)

@@ -37,6 +37,7 @@ comandi = [
     # comandi per scuola
     [
         'argomenti',
+        'calcola',
         'compiti',
         'news',
         'promemoria',
