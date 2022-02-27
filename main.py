@@ -4,6 +4,7 @@ from datetime                       import time, timedelta
 from logging                        import getLogger#, basicConfig, DEBUG
 from random                         import choice
 
+from functions.calcolatrice.solver  import *
 from functions.calcolatrice.calc    import *
 from functions.heroku               import *
 from functions.scuola               import *
@@ -212,7 +213,9 @@ def main():
     dp.add_handler(cmdh("orario",     orario))
     dp.add_handler(cmdh("news",       get_news_command))
     dp.add_handler(cmdh("promemoria", promemoria))
+    dp.add_handler(cmdh("risolvi",    solve))
     dp.add_handler(cmdh("sacrifica",  sacrifica))
+    dp.add_handler(cmdh("zeri",       zeri))
 
 
     # ALIAS
@@ -234,7 +237,9 @@ def main():
     dp.add_handler(cmdh("c",          compiti))
     dp.add_handler(cmdh("calc",       calc))
     dp.add_handler(cmdh("n",          get_news_command))
+    dp.add_handler(cmdh("solve",      solve))
     dp.add_handler(cmdh("p",          promemoria))
+    dp.add_handler(cmdh("z",          zeri))
 
 
     # PER ME

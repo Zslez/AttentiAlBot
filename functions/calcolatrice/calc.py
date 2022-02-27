@@ -1,4 +1,4 @@
-from functions.calcolatrice.calcutils import exp, check, replace, SimboloNonValido
+from functions.calcolatrice.calcutils import exp, check, replace, EspressioneNonValida
 
 from ..utils import send_up
 
@@ -21,8 +21,8 @@ def calc(update, ctx):
         return
 
     try:
-        res = exp(text)
-    except SimboloNonValido:
+        res = exp(text)[1]
+    except EspressioneNonValida:
         send_up(update, 'Espressione non valida\.')
         return
     except ValueError:
@@ -31,12 +31,5 @@ def calc(update, ctx):
     except ZeroDivisionError:
         send_up(update, 'Incontrata divisione per 0\.')
         return
-
-
-    digits = 5
-    res = round(res, digits)
-
-    if int(res) == res:
-        res = int(res)
 
     send_up(update, f'```{res}```', markdown = 1)

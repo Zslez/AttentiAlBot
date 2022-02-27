@@ -9,3 +9,4 @@ youtube-dl==2021.6.6
 urlextract==1.2.0
 selenium==3.141.0
 heroku3==4.2.3
+mpmath==1.2.1

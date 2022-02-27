@@ -110,7 +110,7 @@ def get_today(ctx, update = False):
     else:
         c = 0
         msg = '*COSA È SUCCESSO '
-        msg = 'OGGI*\n\n\n' if default else f'IL GIORNO {giorno.upper()}*\n\n\n'
+        msg += 'OGGI*\n\n\n' if default else f'IL GIORNO {giorno.upper()}*\n\n\n'
 
         for k, v in valid.items():
             msg += f'{(c := c + 1)}\. *{escape_md(k)}*\n\n{escape_md(v)}\n\n'
