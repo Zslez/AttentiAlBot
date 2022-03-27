@@ -14,7 +14,6 @@ __all__ = [
 
 
 apici = ('²', '³', '⁴', '⁵', '⁶', '⁷', '⁸', '⁹', '¹⁰')
-circa = '≈'
 
 
 def solve(update, ctx):

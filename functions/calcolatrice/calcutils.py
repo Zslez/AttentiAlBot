@@ -1,5 +1,9 @@
-from functions.calcolatrice.known import known
-from functions.calcolatrice.funcs import *
+if __name__ == '__main__':
+    from known import known
+    from funcs import *
+else:
+    from functions.calcolatrice.known import known
+    from functions.calcolatrice.funcs import *
 
 import mpmath
 
@@ -9,6 +13,9 @@ mpmath.mp.dps = 500
 # CLASSI PER GLI ERRORI
 
 class EspressioneNonValida(Exception):
+    pass
+
+class ComplexError(Exception):
     pass
 
 
@@ -95,6 +102,9 @@ def exp(text):
 
 
 def evaluate(expr):
+    if 'i' in expr or 'j' in expr:
+        raise ComplexError
+
     # se inizia per +, lo toglie
 
     if expr[0] == '+':
@@ -102,7 +112,7 @@ def evaluate(expr):
 
     if not (res := is_num(expr)) is False:
         if isinstance(res, tuple):
-            return evaluate(expr[:-1] + res[0])
+            return evaluate(str(expr[:-1] + res[0]))
 
         return res
 
@@ -144,14 +154,14 @@ def evaluate(expr):
         term1, term2 = expr.split('*', 1)
 
         if '/' in term1:
-            term1 = div(*term1.split('/', 1))
+            term1 = str(div(*term1.split('/', 1)))
 
         return mul(term1, term2)
     elif '/' in expr:
         term1, term2 = expr.split('/', 1)
 
         if '*' in term1:
-            term1 = mul(*term1.split('*', 1))
+            term1 = str(mul(*term1.split('*', 1)))
 
         return div(term1, term2)
     elif '^-' in expr:
@@ -191,6 +201,11 @@ def minus(expr):
                 temp += term2[c]
 
             # chiama la funzione usando come argomento 'temp' cambiato di segno
+
+            res = funcs[i](-evaluate(temp))
+
+            if res.imag != 0:
+                raise ComplexError
 
             res = '%.50f' % funcs[i](-evaluate(temp))
 
@@ -285,12 +300,6 @@ def check_known(num, digits = 50):
     for i in known:
         if round(n := known[i], digits) == num:
             return signstr + i
-
-        #if isinstance(newnum := check_known_simple(num + n, digits), str):
-        #    return i + ['-', '+'][not signstr] + newnum
-
-        #if isinstance(newnum := check_known_simple(num - n, digits), str):
-        #    return i + ['+', '-'][not signstr] + newnum
 
         for j in range(2, max_check):
             if round(j * n, digits) == num:
