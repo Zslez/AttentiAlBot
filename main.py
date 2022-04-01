@@ -277,8 +277,8 @@ def main():
 
     job1.run_daily(callback = update_and_restart,     days = days(4, 5, 6), time = time2( 3,  0))
     job2.run_daily(callback = change_heroku,          days = days(4, 5, 6), time = time2( 5,  0))
-    job3.run_daily(callback = get_today,              days = days(4),       time = time2(15, 25))
-    job4.run_daily(callback = promemoria_giornaliero, days = days(6),       time = time2(15, 30))
+    job3.run_daily(callback = get_today,              days = days(4),       time = time2(13, 45))
+    job4.run_daily(callback = promemoria_giornaliero, days = days(6),       time = time2(13, 40))
 
     job5.run_repeating(callback = get_news_job, first = news_secs[0], interval = timedelta(minutes = 7))
 
