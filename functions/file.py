@@ -1,6 +1,6 @@
 from os                                             import listdir, remove, rename
-from simple_image_download.simple_image_download    import simple_image_download
 from subprocess                                     import run as run2
+from simple_image_download.simple_image_download    import Downloader
 from urlextract                                     import URLExtract
 from shutil                                         import rmtree
 
@@ -12,15 +12,16 @@ import re
 
 
 __all__ = [
-    'image',
-    'earrape',
-    'to_audio',
-    'to_video',
     'cut_audio_video',
+    'earrape',
+    'gif',
+    'image',
+    'loop_audio_video',
     'reverse_audio_video',
     'speed_audio_video',
     'speed_pitch_audio_video',
-    'loop_audio_video'
+    'to_audio',
+    'to_video'
 ]
 
 
@@ -39,7 +40,6 @@ with open('bad.txt', encoding = 'utf-8') as f:
 
 
 extract = URLExtract().find_urls
-download = simple_image_download().download
 
 
 
@@ -118,7 +118,7 @@ def is_bad(query):
 
 
 
-def image(update, ctx):
+def image(update, ctx, gif = False):
     args = ctx.args
     query = '_'.join(args)
 
@@ -126,12 +126,29 @@ def image(update, ctx):
         update.message.delete()
         return
 
-    download(' '.join(args), 1)
+    download = Downloader()
+    download._extensions = [{'.jpg', '.jpeg'}, {'.gif'}][gif]
+    download = download.download
 
-    with open(f'simple_images/{query}/' + listdir(f'simple_images/{query}')[-1], 'rb') as f:
-        ctx.bot.send_photo(ctx._chat_id_and_data[0], photo = f)
+    download(query, limit = 1)
 
-    rmtree(f'simple_images/{query}')
+    folder = f'simple_images/{query}'
+
+    if len(listdir(folder)) == 0:
+        send_up(update, 'nessuna ' + ['immagine', 'gif'][gif] + f' trovata per \'' + ' '.join(args) + '\'')
+        return
+
+    chat_id = ctx._chat_id_and_data[0]
+
+    with open(folder + '/' + listdir(folder)[0], 'rb') as f:
+        ctx.bot.send_animation(chat_id, animation = f) if gif else ctx.bot.send_photo(chat_id, photo = f)
+
+    rmtree(folder)
+
+
+
+def gif(update, ctx):
+    return image(update, ctx, True)
 
 
 

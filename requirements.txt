@@ -1,7 +1,7 @@
 -e git+https://github.com/julian-r/python-magic.git#egg=python-magic-bin
 requests==2.25.1
 
-simple-image-download==0.4
+simple-image-download==0.5
 python-telegram-bot==13.7
 argoscuolanext==2.0.1
 beautifulsoup4==4.9.3
