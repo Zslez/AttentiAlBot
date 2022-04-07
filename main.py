@@ -1,8 +1,10 @@
 from telegram.ext                   import Updater, CommandHandler, MessageHandler, Filters, Defaults
 from telegram.ext                   import JobQueue, CallbackQueryHandler
+from bs4                            import BeautifulSoup as bs
 from datetime                       import time, timedelta
 from logging                        import getLogger#, basicConfig, DEBUG
 from random                         import choice
+from requests                       import get
 
 from functions.calcolatrice.solver  import *
 from functions.calcolatrice.calc    import *
@@ -112,12 +114,26 @@ def update_and_restart(update, ctx = None):
 
 def orario(update, ctx):
     with open(f'orario/orario.png', 'rb') as f:
-        update.message.reply_photo(f)
+        ctx.bot.send_photo(ctx._chat_id_and_data[0], photo = f)
 
 
 
 def burla_italiana(update, ctx):
     send_up(update, choice(ridere))
+
+
+
+def pise(update, ctx):
+    folder_base_url = 'https://drive.google.com/drive/folders/'
+    file_base_url = 'https://drive.google.com/uc?export=download&id='
+    pise_parent = folder_base_url + '1a_hfzfhDSWQ6vZ62AQJPDR1r4xWZUA3-'
+
+    req = bs(get(pise_parent).content, 'html.parser')
+    folder = choice([i.get('data-id') for i in req.find_all('div', {'draggable': True})])
+    req = bs(get(folder_base_url + folder).content, 'html.parser')
+    file = file_base_url + choice([i.get('data-id') for i in req.find_all('div', {'draggable': True})])
+
+    ctx.bot.send_photo(ctx._chat_id_and_data[0], file)
 
 
 
@@ -153,7 +169,8 @@ def word_check(update, ctx):
             update.message.reply_video(f, 'quando_sborri.mp4',
                 caption = '🎵turuturù turuturù turuturù🎵\n🎵turutututurutu turutu tù!🎵')
             return
-    elif 'interroga' in txtspl and not any(i in txtspl for i in ['non', 'nn', '?']):
+
+    if 'interroga' in txtspl and not any(i in txtspl for i in ['non', 'nn', '?']):
         with open('video/Directed_by_Robert_Weide.mp4', 'rb') as f:
             update.message.reply_video(f, 'Directed_by_Robert_Weide.mp4',
                 caption = '🎵pom pom pom, turuturutturù, turù turù🎵\n🎵turù tuturuturutturù, turù IIIH🎵')
@@ -199,6 +216,7 @@ def main():
     dp.add_handler(cmdh("gif",        gif))
     dp.add_handler(cmdh("loop",       loop_audio_video))
     dp.add_handler(cmdh("image",      image))
+    dp.add_handler(cmdh("pise",       pise))
     dp.add_handler(cmdh("reverse",    reverse_audio_video))
     dp.add_handler(cmdh("speed",      speed_audio_video))
     dp.add_handler(cmdh("speedpitch", speed_pitch_audio_video))

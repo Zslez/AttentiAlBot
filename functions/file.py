@@ -130,7 +130,7 @@ def image(update, ctx, gif = False):
     download._extensions = [{'.jpg', '.jpeg'}, {'.gif'}][gif]
     download = download.download
 
-    download(query, limit = 1)
+    download(query, limit = [5, 2][gif])
 
     folder = f'simple_images/{query}'
 
@@ -140,7 +140,7 @@ def image(update, ctx, gif = False):
 
     chat_id = ctx._chat_id_and_data[0]
 
-    with open(folder + '/' + listdir(folder)[0], 'rb') as f:
+    with open(folder + '/' + listdir(folder)[-1], 'rb') as f:
         ctx.bot.send_animation(chat_id, animation = f) if gif else ctx.bot.send_photo(chat_id, photo = f)
 
     rmtree(folder)
