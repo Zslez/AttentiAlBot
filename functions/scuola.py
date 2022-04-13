@@ -28,17 +28,20 @@ __all__ = [
 
 
 
-sep = '-'
-codice = 'SS16383'
-timezone = pytz.timezone('Europe/Rome')
+with open('classe.json', encoding = 'utf-8') as f:
+    CLASSE = json.load(f)
 
-uname = os.environ['NAMEUSER'] if globals.name else os.environ['USERNAME']
-passw = os.environ['PASSWORD'] if globals.name else os.environ['PASSWORD']
+SEP = '-'
+CODICE = 'SS16383'
+TIMEZONE = pytz.timezone('Europe/Rome')
 
-privata     = 781455352
-gruppo      = -1001261320605
+UNAME = os.environ['NAMEUSER'] if globals.name else os.environ['USERNAME']
+PASSW = os.environ['PASSWORD']
 
-mesi = {
+PRIVATA = 781455352
+GRUPPO  = -1001261320605
+
+MESI = {
     '01': 'GENNAIO',
     '02': 'FEBBRAIO',
     '03': 'MARZO',
@@ -56,15 +59,15 @@ mesi = {
 
 
 def format_data(args, days):
-    args = sep.join(args).replace('/', sep).split(sep)[::-1]
-    today = datetime.now(timezone)
+    args = SEP.join(args).replace('/', SEP).split(SEP)[::-1]
+    today = datetime.now(TIMEZONE)
     year, month = str(today.year), str(today.month)
 
     if args == ['']:
         return (today + timedelta(days = days)).strftime('%Y-%m-%d'), True
-    elif len(args) == 3:
-        if len(args[0]) == 2:
-            args[0] = '20' + args[0]
+
+    if len(args) == 3 and len(args[0]) == 2:
+        args[0] = '20' + args[0]
     elif len(args) == 2:
         args = [year, *args]
     elif len(args) == 1:
@@ -74,7 +77,7 @@ def format_data(args, days):
         if len(args[i]) == 1:
             args[i] = '0' + args[i]
 
-    return sep.join(args), False
+    return SEP.join(args), False
 
 
 
@@ -88,7 +91,7 @@ def filtra(dati, data, args):
 
 
 def get_today(ctx, update = False):
-    session = argoscuolanext.Session(codice, uname, passw)
+    session = argoscuolanext.Session(CODICE, UNAME, PASSW)
     default = True
 
     if update:
@@ -98,7 +101,7 @@ def get_today(ctx, update = False):
         arg = session.oggi()
 
     dati = arg['dati']
-    giorno = 'oggi' if default else f'{int(data.split(sep)[2])} {mesi[data.split(sep)[1]].capitalize()}'
+    giorno = 'oggi' if default else f'{int(data.split(SEP)[2])} {MESI[data.split(SEP)[1]].capitalize()}'
 
     valid = {
         i['dati']['desMateria']: i['dati']['desArgomento']
@@ -106,6 +109,9 @@ def get_today(ctx, update = False):
     }
 
     if len(valid) == 0:
+        if not update:
+            return
+
         msg = f'Nessuna novità per il giorno {giorno}\.'
     else:
         c = 0
@@ -116,7 +122,7 @@ def get_today(ctx, update = False):
             msg += f'{(c := c + 1)}\. *{escape_md(k)}*\n\n{escape_md(v)}\n\n'
 
     if not update:
-        send(gruppo, msg.strip())
+        send(GRUPPO, msg.strip())
     else:
         send_up(update, msg.strip())
 
@@ -126,9 +132,9 @@ def compiti_promemoria(update, ctx, dati, args, tipo, days = 1, edit = False, di
     data, default = format_data([ctx.args, ['']][edit != False], days)
     default = not (edit or not default)
     orig_days = (days := days + 1) - 2
-    max_days = 6
+    max_days = 7
 
-    gio = f'{int(data.split(sep)[2])} {mesi[data.split(sep)[1]].capitalize()}'
+    gio = f'{int(data.split(SEP)[2])} {MESI[data.split(SEP)[1]].capitalize()}'
     tipo1, tipo2 = tipo
     c = 0
 
@@ -154,7 +160,7 @@ def compiti_promemoria(update, ctx, dati, args, tipo, days = 1, edit = False, di
                 msg = f'Nessun {tipo1} per '
                 msg += f'domani\.\n\n\n' if default else f'il giorno {gio}\.\n\n\n'
 
-            msg += f'*{tipo2} PER {int(data.split(sep)[2])} {mesi[data.split(sep)[1]]}*\n\n\n{msg_2}'
+            msg += f'*{tipo2} PER {int(data.split(SEP)[2])} {MESI[data.split(SEP)[1]]}*\n\n\n{msg_2}'
 
             break
     else:
@@ -190,7 +196,7 @@ def cp_callback(update, ctx):
 
 
 def compiti(update, ctx, days = 1, edit = False, dir = 1):
-    session = argoscuolanext.Session(codice, uname, passw)
+    session = argoscuolanext.Session(CODICE, UNAME, PASSW)
     arg = session.compiti()
     args = ['desMateria', 'desCompiti', 'datCompiti']
 
@@ -199,7 +205,7 @@ def compiti(update, ctx, days = 1, edit = False, dir = 1):
 
 
 def promemoria(update, ctx, days = 1, edit = False, dir = 1):
-    session = argoscuolanext.Session(codice, uname, passw)
+    session = argoscuolanext.Session(CODICE, UNAME, PASSW)
     prom = session.promemoria()
     args = ['desMittente', 'desAnnotazioni', 'datGiorno']
 
@@ -208,12 +214,12 @@ def promemoria(update, ctx, days = 1, edit = False, dir = 1):
 
 
 def promemoria_giornaliero(ctx):
-    data = (datetime.now(timezone) + timedelta(days = 1)).strftime('%Y-%m-%d')
-    session = argoscuolanext.Session(codice, uname, passw)
+    data = (datetime.now(TIMEZONE) + timedelta(days = 1)).strftime('%Y-%m-%d')
+    session = argoscuolanext.Session(CODICE, UNAME, PASSW)
     prom = session.promemoria()['dati']
 
-    g = int(data.split(sep)[2])
-    m = mesi[data.split(sep)[1]]
+    g = int(data.split(SEP)[2])
+    m = MESI[data.split(SEP)[1]]
     msg = f'*PROMEMORIA {g} {m}*\n'
     c = 0
 
@@ -225,23 +231,14 @@ def promemoria_giornaliero(ctx):
     if not c:
         return
 
-    send(gruppo, msg)
+    send(GRUPPO, msg)
 
 
 
 def sacrifica(update, ctx):
-    with open('classe.json', encoding = 'utf-8') as f:
-        classe = json.load(f)
+    num = 2 if len(ctx.args) == 0 else min(int(ctx.args[0]), len(CLASSE))
 
-    res = ''
-    num = 2 if len(ctx.args) == 0 else min(int(ctx.args[0]), len(classe))
-
-    for _ in range(num):
-        choice = random.choices(list(classe.keys()), list(classe.values()), k = 1)[0]
-        res += choice + '\n'
-        del classe[choice]
-
-    send_up(update, res, 0)
+    send_up(update, '\n'.join(random.sample(list(CLASSE), num)), 0)
 
 
 

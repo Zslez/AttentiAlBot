@@ -1,9 +1,10 @@
 from telegram.ext                   import Updater, CommandHandler, MessageHandler, Filters, Defaults
 from telegram.ext                   import JobQueue, CallbackQueryHandler
 from bs4                            import BeautifulSoup as bs
+from telegram                       import InputMediaPhoto
 from datetime                       import time, timedelta
+from random                         import choice, sample
 from logging                        import getLogger#, basicConfig, DEBUG
-from random                         import choice
 from requests                       import get
 
 from functions.calcolatrice.solver  import *
@@ -62,7 +63,7 @@ giorni = [
 # COMANDI
 
 def start(update, ctx):
-    send_up(update, 'Hey' + ['', '\n\n' + start_text][update.message.chat.id != gruppo])
+    send_up(update, ['Hey', '\n\n' + start_text][update.message.chat.id != gruppo])
 
 
 
@@ -124,6 +125,15 @@ def burla_italiana(update, ctx):
 
 
 def pise(update, ctx):
+    num = 1
+
+    if len(ctx.args) > 0:
+        try:
+            num = int(ctx.args[0])
+            assert 1 <= num <= 10
+        except (ValueError, AssertionError):
+            num = 1
+
     folder_base_url = 'https://drive.google.com/drive/folders/'
     file_base_url = 'https://drive.google.com/uc?export=download&id='
     pise_parent = folder_base_url + '1a_hfzfhDSWQ6vZ62AQJPDR1r4xWZUA3-'
@@ -131,9 +141,16 @@ def pise(update, ctx):
     req = bs(get(pise_parent).content, 'html.parser')
     folder = choice([i.get('data-id') for i in req.find_all('div', {'draggable': True})])
     req = bs(get(folder_base_url + folder).content, 'html.parser')
-    file = file_base_url + choice([i.get('data-id') for i in req.find_all('div', {'draggable': True})])
+    phs = [i.get('data-id') for i in req.find_all('div', {'draggable': True})]
+    chat_id = ctx._chat_id_and_data[0]
 
-    ctx.bot.send_photo(ctx._chat_id_and_data[0], file)
+    if num > 1:
+        try:
+            ctx.bot.send_media_group(chat_id, [InputMediaPhoto(file_base_url + i) for i in sample(phs, min(num, len(phs)))])
+        except Exception:
+            pass
+    else:
+        ctx.bot.send_photo(chat_id, file_base_url + choice(phs))
 
 
 
@@ -277,6 +294,7 @@ def main():
 
     dp.add_handler(CallbackQueryHandler(cp_callback,     pattern = '^(compito|promemoria)'))
     dp.add_handler(CallbackQueryHandler(help_callback,   pattern = '^help_'))
+    dp.add_handler(CallbackQueryHandler(tv_callback,   pattern = '^tv_'))
 
     dp.add_error_handler(error)
 
@@ -321,8 +339,6 @@ def main():
 
     jobp1.run_daily(callback = domenica_al_museo, days = (0,),          time = time2(10,  0))
     jobp2.run_daily(callback = stasera_in_tv,     days = days(4, 5, 6), time = time2(18,  0))
-
-    jobp3.run_repeating(callback = culture_roma, first = pers_secs[0], interval = timedelta(minutes = 14))
 
     jobp1.start()
     jobp2.start()

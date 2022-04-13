@@ -2,27 +2,13 @@
 
 Con questo Bot è possibile ottenere *compiti*, *promemoria* e *notizie* direttamente su Telegram senza bisogno di credenziali, sia in chat privata che sui gruppi\.
 
-Il Bot invierà anche alcuni messaggi in automatico sul gruppo ogni giorno ad un certo orario, come gli argomenti della giornata appena finita, i promemoria e i compiti per il giorno successivo\.
+Il Bot invia anche alcuni messaggi in automatico sul gruppo ogni giorno ad un certo orario, come gli argomenti della giornata appena finita e i promemoria per il giorno successivo\.
 
-Inoltre ci sono tante altre funzioni per puro divertimento, che servono a modificare in vari modi audio e video \(funziona anche con i *messaggi vocali*\)\.
+Inoltre ci sono tante altre funzioni per puro divertimento, di cui alcune possono modificare in vari modi audio e video \(anche *vocali*\)\.
 
-
-*Come usare i comandi*
-
-Usa il comando /help per ricevere la lista dei comandi e informazioni dettagliate su come usarli\.
+Usa */help* per ricevere la lista dei comandi e informazioni dettagliate su come usarli\.
 
 
-*Nuove funzioni da proporre?*
+*Vuoi vedere il codice del Bot?*
 
-*[Scrivimi](https://t.me/cristiano_san)* \(puoi scrivermi anche se non hai da proporre nulla 😔\)\.
-
-
-*Non sei della mia classe e vuoi usare il Bot?*
-
-*[Scrivimi](https://t.me/cristiano_san)* dicendo chi sei e perché ti serve\.
-
-
-*Non ti fidi di [me](https://t.me/cristiano_san)?*
-
-Understandable, in ogni caso, [qui](https://github.com/Zslez/AttentiAlBot) su GitHub c'è il codice del Bot, completo e abbastanza commentato\. Se ti servono spiegazioni su come funziona chiedi pure\.
-In ogni caso, le mie credenziali usate per accedere ad ARGO sono le mie e non servono dati per usare i comandi\.
+*[Eccolo](https://github.com/Zslez/AttentiAlBot)*, *completo* e pure abbastanza *commentato*\.
