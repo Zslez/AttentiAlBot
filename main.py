@@ -1,9 +1,9 @@
 from telegram.ext                   import Updater, CommandHandler, MessageHandler, Filters, Defaults
 from telegram.ext                   import JobQueue, CallbackQueryHandler
+from random                         import choice, choices, sample
 from bs4                            import BeautifulSoup as bs
 from telegram                       import InputMediaPhoto
 from datetime                       import time, timedelta
-from random                         import choice, sample
 from logging                        import getLogger#, basicConfig, DEBUG
 from requests                       import get
 
@@ -37,7 +37,7 @@ logger = getLogger(__name__)
 
 token = os.environ['TOKEN']
 
-globals.max_news    = 90    if globals.name else int(os.environ['MAXNEWS'])
+globals.max_news    = 135   if globals.name else int(os.environ['MAXNEWS'])
 globals.hnews       = None  if globals.name else os.environ['NEWS']
 globals.lnu         = None  if globals.name else os.environ['LNU']
 
@@ -84,8 +84,6 @@ def update_and_restart(update, ctx = None):
         for i in globals.messages:
             delete(attentiallog, i)
 
-        musei = ';'.join(globals.musei.values())
-
         heroku3.from_key(hkey2).app(
             ['attentialbot2', 'attentialbot'][bool(hname.replace('attentialbot', ''))]
         ).config().update(
@@ -93,8 +91,7 @@ def update_and_restart(update, ctx = None):
                 'USERS': ','.join(users),
                 'LNU': globals.lnu,
                 'MAXNEWS': globals.max_news,
-                'NEWS': globals.hnews,
-                'MUSEI': musei
+                'NEWS': globals.hnews
             }
         )
 
@@ -103,8 +100,7 @@ def update_and_restart(update, ctx = None):
                 'USERS': ','.join(users),
                 'LNU': globals.lnu,
                 'MAXNEWS': globals.max_news,
-                'NEWS': globals.hnews,
-                'MUSEI': musei
+                'NEWS': globals.hnews
             }
         )
 
@@ -136,7 +132,7 @@ def pise(update, ctx):
 
     folder_base_url = 'https://drive.google.com/drive/folders/'
     file_base_url = 'https://drive.google.com/uc?export=download&id='
-    pise_parent = folder_base_url + '1a_hfzfhDSWQ6vZ62AQJPDR1r4xWZUA3-'
+    pise_parent = folder_base_url + os.environ['PISEID']
 
     req = bs(get(pise_parent).content, 'html.parser')
     folder = choice([i.get('data-id') for i in req.find_all('div', {'draggable': True})])
@@ -192,6 +188,9 @@ def word_check(update, ctx):
             update.message.reply_video(f, 'Directed_by_Robert_Weide.mp4',
                 caption = '🎵pom pom pom, turuturutturù, turù turù🎵\n🎵turù tuturuturutturù, turù IIIH🎵')
             return
+
+    if choices([1, 0], [1, 199])[0]:
+        send_up(update, 'I\'m José Mourinho')
 
 
 # handler per gli errori per non far crashare tutto

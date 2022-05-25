@@ -3,7 +3,6 @@ creds = None
 
 messages = []
 
-hnews = None
-
 lnu = None
-max_news = 90
+hnews = None
+max_news = 135

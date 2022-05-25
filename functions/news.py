@@ -109,7 +109,7 @@ def get_news(ctx):
 
             file = loads(dri.get_log('performance')[-1]['message'])['message']['params']['url']
 
-            os.mkdir('allegati')
+            os.makedirs('allegati', exist_ok = True)
 
             with open(f'allegati/' + list(files)[c], 'wb') as f:
                 f.write(get(file).content)

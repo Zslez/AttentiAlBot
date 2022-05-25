@@ -6,7 +6,7 @@ simple_images
 
 .git2
 
-up.bat
+up*.bat
 
 test.*
 *_test
